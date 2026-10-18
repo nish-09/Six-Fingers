@@ -172,7 +172,9 @@ class MatchState(BaseModel):
     # User account links (for authenticated players)
     player_1_user_id: Optional[str] = None
     player_2_user_id: Optional[str] = None
-    match_type: str = "PRIVATE" # "PUBLIC" or "PRIVATE"
+    match_type: str = "PRIVATE" # "PUBLIC", "PRIVATE", "SERIES", "TOURNAMENT"
+    series_id: Optional[str] = None
+    tournament_id: Optional[str] = None
 
     # Legacy player fields (maintained for backward compatibility with 1v1 tests)
     player_1_id: str

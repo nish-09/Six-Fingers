@@ -29,6 +29,8 @@ from .routers.friends import router as friends_router
 from .routers.presence import router as presence_router
 from .routers.matchmaking import router as matchmaking_router
 from .routers.invitations import router as invitations_router
+from .routers.series import router as series_router
+from .routers.tournaments import router as tournaments_router
 from .presence.manager import presence_manager, PresenceState
 from fastapi import Depends
 
@@ -72,6 +74,8 @@ app.include_router(friends_router)
 app.include_router(presence_router)
 app.include_router(matchmaking_router)
 app.include_router(invitations_router)
+app.include_router(series_router)
+app.include_router(tournaments_router)
 
 class CreateRoomRequest(BaseModel):
     host_name: str = "Player 1"
@@ -312,7 +316,42 @@ async def websocket_endpoint(
             elif msg_type == "UPDATE_RULES":
                 if user_conn.is_host and room.state.phase == MatchPhase.LOBBY:
                     rules_data = data.get("rules", {})
+                    if "overs_per_innings" in rules_data:
+                        rules_data["overs_per_innings"] = max(1, min(int(rules_data["overs_per_innings"]), 50))
+                    if "wickets_per_innings" in rules_data:
+                        rules_data["wickets_per_innings"] = max(1, min(int(rules_data["wickets_per_innings"]), 10))
+                    if "decision_timer_seconds" in rules_data:
+                        rules_data["decision_timer_seconds"] = max(3, min(int(rules_data["decision_timer_seconds"]), 30))
                     room.state.rules = MatchRules(**rules_data)
+                    await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
+
+            # 3b. Update Custom Team Details & Roster (Host or Captain)
+            elif msg_type == "UPDATE_TEAM_CUSTOM":
+                team_key = data.get("team") # "team_a" or "team_b"
+                is_authorized = user_conn.is_host or (user_conn.is_captain and (
+                    (team_key == "team_a" and user_conn.team_id == room.state.team_a.id) or
+                    (team_key == "team_b" and user_conn.team_id == room.state.team_b.id)
+                ))
+                if is_authorized and room.state.phase == MatchPhase.LOBBY:
+                    team_target = room.state.team_a if team_key == "team_a" else room.state.team_b
+                    if "name" in data and data["name"]:
+                        team_target.name = str(data["name"])[:50]
+                    if "color" in data and data["color"]:
+                        team_target.color = str(data["color"])[:16]
+                    if "accent_color" in data and data["accent_color"]:
+                        team_target.accent_color = str(data["accent_color"])[:16]
+                    if "players" in data and isinstance(data["players"], list):
+                        new_roster = []
+                        for idx, p in enumerate(data["players"][:11]):
+                            new_roster.append(PlayerRosterItem(
+                                id=str(p.get("id", f"p_{idx+1}")),
+                                name=str(p.get("name", f"Player {idx+1}"))[:30],
+                                role=p.get("role", PlayerRole.ALL_ROUNDER),
+                                batting_order=int(p.get("batting_order", idx + 1)),
+                                bowling_order=int(p.get("bowling_order", idx + 1))
+                            ))
+                        if new_roster:
+                            team_target.players = new_roster
                     await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
 
             # 4. Team assignment (Host or self during lobby)

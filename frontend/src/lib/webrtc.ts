@@ -180,6 +180,38 @@ export class WebRTCManager {
     return false;
   }
 
+  public async replaceVideoTrack(newTrack: MediaStreamTrack | null): Promise<boolean> {
+    if (!this.pc) return false;
+    try {
+      const senders = this.pc.getSenders();
+      const videoSender = senders.find((s) => s.track && s.track.kind === "video");
+      if (videoSender) {
+        await videoSender.replaceTrack(newTrack);
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      console.error("Error replacing video track:", err);
+      return false;
+    }
+  }
+
+  public async replaceAudioTrack(newTrack: MediaStreamTrack | null): Promise<boolean> {
+    if (!this.pc) return false;
+    try {
+      const senders = this.pc.getSenders();
+      const audioSender = senders.find((s) => s.track && s.track.kind === "audio");
+      if (audioSender) {
+        await audioSender.replaceTrack(newTrack);
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      console.error("Error replacing audio track:", err);
+      return false;
+    }
+  }
+
   public cleanup() {
     if (this.localStream) {
       this.localStream.getTracks().forEach((track) => track.stop());

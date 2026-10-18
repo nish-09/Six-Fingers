@@ -18,6 +18,8 @@ import { ProfileModal } from "@/components/ProfileModal";
 import { PublicProfileModal } from "@/components/PublicProfileModal";
 import { LeaderboardModal } from "@/components/LeaderboardModal";
 import { NotificationDrawer } from "@/components/NotificationDrawer";
+import { SeriesModal } from "@/components/SeriesModal";
+import { TournamentsModal } from "@/components/TournamentsModal";
 import { WebRTCManager } from "@/lib/webrtc";
 import { getApiBaseUrl, getWsEndpoint } from "@/lib/config";
 import { useAuth } from "@/lib/authContext";
@@ -48,6 +50,8 @@ export default function Home() {
   const [showDetailedScorecard, setShowDetailedScorecard] = useState<boolean>(false);
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showSeriesModal, setShowSeriesModal] = useState<boolean>(false);
+  const [showTournamentsModal, setShowTournamentsModal] = useState<boolean>(false);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<"signin" | "register">("signin");
   const [showMatchmakingModal, setShowMatchmakingModal] = useState<boolean>(false);
@@ -211,7 +215,8 @@ export default function Home() {
             break;
 
           case "DELIVERY_REVEAL":
-            setLatestRevealResult(msg.result);
+          case "SIMULTANEOUS_REVEAL":
+            setLatestRevealResult(msg.delivery_result || msg.result);
             if (msg.state) setGameState(msg.state);
             break;
 
@@ -520,6 +525,27 @@ export default function Home() {
     }
   };
 
+  // Real-time WebRTC track swapping for webcam filters and voice effects
+  const handleApplyWebcamEffectTrack = async (track: MediaStreamTrack | null) => {
+    if (!webrtcRef.current) return;
+    if (track) {
+      await webrtcRef.current.replaceVideoTrack(track);
+    } else {
+      const rawTrack = localStream?.getVideoTracks()[0] || null;
+      await webrtcRef.current.replaceVideoTrack(rawTrack);
+    }
+  };
+
+  const handleApplyVoiceEffectTrack = async (track: MediaStreamTrack | null) => {
+    if (!webrtcRef.current) return;
+    if (track) {
+      await webrtcRef.current.replaceAudioTrack(track);
+    } else {
+      const rawTrack = localStream?.getAudioTracks()[0] || null;
+      await webrtcRef.current.replaceAudioTrack(rawTrack);
+    }
+  };
+
   // Social & Chat Action
   const handleSendChat = (channel: "all" | "team" | "spectator", text: string, reaction?: string) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -610,6 +636,8 @@ export default function Home() {
                 onOpenProfile={() => setShowProfileModal(true)}
                 onOpenHistory={() => setShowHistory(true)}
                 onViewMatchDetail={handleViewMatchDetail}
+                onOpenSeries={() => setShowSeriesModal(true)}
+                onOpenTournaments={() => setShowTournamentsModal(true)}
               />
             ) : (
               <LandingHero
@@ -674,6 +702,8 @@ export default function Home() {
                 opponentLocked={opponentLocked}
                 chatMessages={chatMessages}
                 onSendChat={handleSendChat}
+                onApplyWebcamEffectTrack={handleApplyWebcamEffectTrack}
+                onApplyVoiceEffectTrack={handleApplyVoiceEffectTrack}
               />
             )}
           </>
@@ -761,6 +791,22 @@ export default function Home() {
           }
         }}
       />
+
+      {/* 14. Series Hub Modal */}
+      {showSeriesModal && (
+        <SeriesModal
+          onClose={() => setShowSeriesModal(false)}
+          onJoinRoom={(code) => handleJoinMatch(code, profile?.display_name || "Player")}
+        />
+      )}
+
+      {/* 15. Tournaments Championships Modal */}
+      {showTournamentsModal && (
+        <TournamentsModal
+          onClose={() => setShowTournamentsModal(false)}
+          onJoinRoom={(code) => handleJoinMatch(code, profile?.display_name || "Player")}
+        />
+      )}
 
       {/* 14. Footer */}
       <footer className="w-full bg-[#111111] border-t-4 border-[#111111] text-[#FFF9E8] py-4 px-4 text-center text-xs font-bold font-mono">

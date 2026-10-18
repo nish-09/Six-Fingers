@@ -31,6 +31,8 @@ interface DashboardViewProps {
   onOpenProfile: () => void;
   onOpenHistory: () => void;
   onViewMatchDetail: (matchId: string) => void;
+  onOpenSeries?: () => void;
+  onOpenTournaments?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -42,6 +44,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenProfile,
   onOpenHistory,
   onViewMatchDetail,
+  onOpenSeries,
+  onOpenTournaments,
 }) => {
   const { user, profile } = useAuth();
   const { presences } = usePresence();
@@ -243,6 +247,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="text-[10px] font-black uppercase text-gray-500">Rankings</div>
                 <div className="font-display font-black text-sm uppercase">Leaderboard</div>
                 <div className="text-[10px] font-bold text-[#F000A8]">Global Records</div>
+              </div>
+              <Trophy className="w-5 h-5 text-[#FFD900]" />
+            </button>
+          </div>
+
+          {/* Multi-Match Series & Tournaments Quick Launch */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                if (onOpenSeries) onOpenSeries();
+              }}
+              className="p-3.5 bg-[#FFF9E8] border-3 border-black shadow-[4px_4px_0px_#111] hover:bg-yellow-50 flex items-center justify-between text-left transition-transform active:translate-x-0.5 active:translate-y-0.5"
+            >
+              <div>
+                <div className="text-[10px] font-black uppercase text-gray-500">Multi-Match</div>
+                <div className="font-display font-black text-xs sm:text-sm uppercase text-[#6500C8]">Series Derby</div>
+                <div className="text-[10px] font-bold text-gray-600">Best of 3, 5, 7</div>
+              </div>
+              <Swords className="w-5 h-5 text-[#6500C8]" />
+            </button>
+
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                if (onOpenTournaments) onOpenTournaments();
+              }}
+              className="p-3.5 bg-[#FFF9E8] border-3 border-black shadow-[4px_4px_0px_#111] hover:bg-purple-50 flex items-center justify-between text-left transition-transform active:translate-x-0.5 active:translate-y-0.5"
+            >
+              <div>
+                <div className="text-[10px] font-black uppercase text-gray-500">Championship</div>
+                <div className="font-display font-black text-xs sm:text-sm uppercase text-[#F000A8]">Tournaments</div>
+                <div className="text-[10px] font-bold text-gray-600">Knockout Brackets</div>
               </div>
               <Trophy className="w-5 h-5 text-[#FFD900]" />
             </button>

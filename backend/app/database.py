@@ -117,7 +117,9 @@ class MatchRecord(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     room_code: Mapped[str] = mapped_column(String(16), index=True)
-    match_type: Mapped[str] = mapped_column(String(20), default="PRIVATE") # PUBLIC or PRIVATE
+    match_type: Mapped[str] = mapped_column(String(20), default="PRIVATE") # PUBLIC, PRIVATE, SERIES, TOURNAMENT
+    series_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
+    tournament_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     player_1_user_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     player_2_user_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     team_a_name: Mapped[str] = mapped_column(String(100))
@@ -130,6 +132,99 @@ class MatchRecord(Base):
     second_innings_wickets: Mapped[int] = mapped_column(Integer, default=0)
     total_deliveries: Mapped[int] = mapped_column(Integer, default=0)
     scorecard_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+class Series(Base):
+    __tablename__ = "series"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(128))
+    creator_id: Mapped[str] = mapped_column(String(64), index=True)
+    opponent_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
+    creator_name: Mapped[str] = mapped_column(String(64))
+    opponent_name: Mapped[str] = mapped_column(String(64), default="Opponent")
+    series_format: Mapped[str] = mapped_column(String(32), default="BEST_OF_3") # BEST_OF_3, BEST_OF_5, BEST_OF_7, FIRST_TO_N, FIXED_MATCHES
+    total_scheduled_matches: Mapped[int] = mapped_column(Integer, default=3)
+    target_wins: Mapped[int] = mapped_column(Integer, default=2)
+    overs_per_match: Mapped[int] = mapped_column(Integer, default=2)
+    wickets_per_match: Mapped[int] = mapped_column(Integer, default=3)
+    creator_wins: Mapped[int] = mapped_column(Integer, default=0)
+    opponent_wins: Mapped[int] = mapped_column(Integer, default=0)
+    draws: Mapped[int] = mapped_column(Integer, default=0)
+    matches_played: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(20), default="ACTIVE", index=True) # ACTIVE, COMPLETED, CANCELLED
+    winner_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    winner_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    current_room_code: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    updated_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+class SeriesMatch(Base):
+    __tablename__ = "series_matches"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    series_id: Mapped[str] = mapped_column(String(64), index=True)
+    match_number: Mapped[int] = mapped_column(Integer)
+    room_code: Mapped[str] = mapped_column(String(16))
+    match_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    winner_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    winner_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    score_summary: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+class Tournament(Base):
+    __tablename__ = "tournaments"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(128))
+    description: Mapped[str] = mapped_column(String(255), default="Six Fingers Hand Cricket Championship")
+    organizer_id: Mapped[str] = mapped_column(String(64), index=True)
+    organizer_name: Mapped[str] = mapped_column(String(64))
+    tournament_format: Mapped[str] = mapped_column(String(32), default="KNOCKOUT") # KNOCKOUT or ROUND_ROBIN
+    max_participants: Mapped[int] = mapped_column(Integer, default=4) # 4, 8, 16
+    overs_per_match: Mapped[int] = mapped_column(Integer, default=2)
+    wickets_per_match: Mapped[int] = mapped_column(Integer, default=3)
+    status: Mapped[str] = mapped_column(String(20), default="REGISTRATION", index=True) # REGISTRATION, IN_PROGRESS, COMPLETED
+    current_round: Mapped[int] = mapped_column(Integer, default=1)
+    winner_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    winner_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    updated_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+class TournamentParticipant(Base):
+    __tablename__ = "tournament_participants"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tournament_id: Mapped[str] = mapped_column(String(64), index=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    user_name: Mapped[str] = mapped_column(String(64))
+    gamer_tag: Mapped[str] = mapped_column(String(64))
+    avatar_url: Mapped[str] = mapped_column(String(255), default="avatar_1")
+    seed: Mapped[int] = mapped_column(Integer, default=0)
+    is_eliminated: Mapped[bool] = mapped_column(Boolean, default=False)
+    matches_played: Mapped[int] = mapped_column(Integer, default=0)
+    matches_won: Mapped[int] = mapped_column(Integer, default=0)
+    matches_lost: Mapped[int] = mapped_column(Integer, default=0)
+    points: Mapped[int] = mapped_column(Integer, default=0)
+    joined_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+class TournamentFixture(Base):
+    __tablename__ = "tournament_fixtures"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tournament_id: Mapped[str] = mapped_column(String(64), index=True)
+    round_number: Mapped[int] = mapped_column(Integer, default=1)
+    match_index: Mapped[int] = mapped_column(Integer, default=1)
+    player_1_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    player_1_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    player_2_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    player_2_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    room_code: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="SCHEDULED") # SCHEDULED, READY, IN_PROGRESS, COMPLETED
+    winner_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    winner_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    score_summary: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    next_fixture_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 async def init_db():
@@ -146,6 +241,10 @@ async def init_db():
                 await conn.execute(text("ALTER TABLE match_records ADD COLUMN player_1_user_id VARCHAR(64)"))
             if "player_2_user_id" not in existing_cols:
                 await conn.execute(text("ALTER TABLE match_records ADD COLUMN player_2_user_id VARCHAR(64)"))
+            if "series_id" not in existing_cols:
+                await conn.execute(text("ALTER TABLE match_records ADD COLUMN series_id VARCHAR(64)"))
+            if "tournament_id" not in existing_cols:
+                await conn.execute(text("ALTER TABLE match_records ADD COLUMN tournament_id VARCHAR(64)"))
         except Exception as e:
             print(f"[Migration Warning] {e}")
 
@@ -189,6 +288,9 @@ async def save_completed_match(
 
     deliv_count = sum(len(inn.get("deliveries", [])) for inn in inn_list)
 
+    series_id = state_dict.get("series_id")
+    tournament_id = state_dict.get("tournament_id")
+
     # Detect user IDs from state if not passed explicitly
     p1_uid = player_1_user_id or state_dict.get("player_1_user_id")
     p2_uid = player_2_user_id or state_dict.get("player_2_user_id")
@@ -210,11 +312,17 @@ async def save_completed_match(
                 existing.player_1_user_id = p1_uid
             if p2_uid:
                 existing.player_2_user_id = p2_uid
+            if series_id:
+                existing.series_id = series_id
+            if tournament_id:
+                existing.tournament_id = tournament_id
         else:
             record = MatchRecord(
                 id=match_id,
                 room_code=room_code,
                 match_type=match_type,
+                series_id=series_id,
+                tournament_id=tournament_id,
                 player_1_user_id=p1_uid,
                 player_2_user_id=p2_uid,
                 team_a_name=team_a_name,
@@ -230,6 +338,149 @@ async def save_completed_match(
                 created_at=time.time()
             )
             session.add(record)
+
+        # Update Series progression if part of a multi-match series
+        if series_id:
+            series = await session.get(Series, series_id)
+            if series and series.status == "ACTIVE":
+                stmt = select(SeriesMatch).where(and_(SeriesMatch.series_id == series_id, SeriesMatch.match_id == match_id))
+                existing_sm = (await session.execute(stmt)).scalar_one_or_none()
+                if not existing_sm:
+                    series.matches_played += 1
+                    winner_uid = p1_uid if (winner_name == team_a_name) else (p2_uid if winner_name == team_b_name else None)
+                    if winner_uid == series.creator_id:
+                        series.creator_wins += 1
+                    elif winner_uid == series.opponent_id:
+                        series.opponent_wins += 1
+                    else:
+                        series.draws += 1
+
+                    fmt = series.series_format
+                    if fmt == "BEST_OF_3":
+                        if series.creator_wins >= 2:
+                            series.winner_id = series.creator_id
+                            series.winner_name = series.creator_name
+                            series.status = "COMPLETED"
+                        elif series.opponent_wins >= 2:
+                            series.winner_id = series.opponent_id
+                            series.winner_name = series.opponent_name
+                            series.status = "COMPLETED"
+                    elif fmt == "BEST_OF_5":
+                        if series.creator_wins >= 3:
+                            series.winner_id = series.creator_id
+                            series.winner_name = series.creator_name
+                            series.status = "COMPLETED"
+                        elif series.opponent_wins >= 3:
+                            series.winner_id = series.opponent_id
+                            series.winner_name = series.opponent_name
+                            series.status = "COMPLETED"
+                    elif fmt == "BEST_OF_7":
+                        if series.creator_wins >= 4:
+                            series.winner_id = series.creator_id
+                            series.winner_name = series.creator_name
+                            series.status = "COMPLETED"
+                        elif series.opponent_wins >= 4:
+                            series.winner_id = series.opponent_id
+                            series.winner_name = series.opponent_name
+                            series.status = "COMPLETED"
+                    elif fmt == "FIRST_TO_N":
+                        if series.creator_wins >= series.target_wins:
+                            series.winner_id = series.creator_id
+                            series.winner_name = series.creator_name
+                            series.status = "COMPLETED"
+                        elif series.opponent_wins >= series.target_wins:
+                            series.winner_id = series.opponent_id
+                            series.winner_name = series.opponent_name
+                            series.status = "COMPLETED"
+                    elif fmt == "FIXED_MATCHES":
+                        if series.matches_played >= series.total_scheduled_matches:
+                            series.status = "COMPLETED"
+                            if series.creator_wins > series.opponent_wins:
+                                series.winner_id = series.creator_id
+                                series.winner_name = series.creator_name
+                            elif series.opponent_wins > series.creator_wins:
+                                series.winner_id = series.opponent_id
+                                series.winner_name = series.opponent_name
+
+                    series.updated_at = time.time()
+                    sm = SeriesMatch(
+                        id=f"sm_{int(time.time())}_{series.matches_played}",
+                        series_id=series_id,
+                        match_number=series.matches_played,
+                        room_code=room_code,
+                        match_id=match_id,
+                        winner_id=winner_uid,
+                        winner_name=winner_name,
+                        score_summary=win_desc or f"{team_a_name} vs {team_b_name}",
+                        created_at=time.time()
+                    )
+                    session.add(sm)
+
+        # Update Tournament progression if part of a tournament
+        if tournament_id:
+            tourn = await session.get(Tournament, tournament_id)
+            if tourn and tourn.status in ["IN_PROGRESS", "REGISTRATION"]:
+                stmt = select(TournamentFixture).where(
+                    and_(TournamentFixture.tournament_id == tournament_id, TournamentFixture.room_code == room_code)
+                )
+                fixture = (await session.execute(stmt)).scalar_one_or_none()
+                if not fixture:
+                    stmt2 = select(TournamentFixture).where(
+                        and_(
+                            TournamentFixture.tournament_id == tournament_id,
+                            TournamentFixture.status != "COMPLETED",
+                            or_(TournamentFixture.player_1_id == p1_uid, TournamentFixture.player_2_id == p1_uid)
+                        )
+                    )
+                    fixture = (await session.execute(stmt2)).scalar_one_or_none()
+
+                if fixture and fixture.status != "COMPLETED":
+                    winner_uid = p1_uid if (winner_name == team_a_name) else (p2_uid if winner_name == team_b_name else None)
+                    loser_uid = p2_uid if winner_uid == p1_uid else (p1_uid if winner_uid == p2_uid else None)
+
+                    fixture.status = "COMPLETED"
+                    fixture.winner_id = winner_uid
+                    fixture.winner_name = winner_name
+                    fixture.score_summary = win_desc or f"{team_a_name} won"
+
+                    if winner_uid:
+                        p_win = (await session.execute(select(TournamentParticipant).where(
+                            and_(TournamentParticipant.tournament_id == tournament_id, TournamentParticipant.user_id == winner_uid)
+                        ))).scalar_one_or_none()
+                        if p_win:
+                            p_win.matches_played += 1
+                            p_win.matches_won += 1
+                            p_win.points += 2
+
+                    if loser_uid:
+                        p_lose = (await session.execute(select(TournamentParticipant).where(
+                            and_(TournamentParticipant.tournament_id == tournament_id, TournamentParticipant.user_id == loser_uid)
+                        ))).scalar_one_or_none()
+                        if p_lose:
+                            p_lose.matches_played += 1
+                            p_lose.matches_lost += 1
+                            if tourn.tournament_format == "KNOCKOUT":
+                                p_lose.is_eliminated = True
+
+                    if tourn.tournament_format == "KNOCKOUT" and fixture.next_fixture_id and winner_uid:
+                        next_fix = await session.get(TournamentFixture, fixture.next_fixture_id)
+                        if next_fix:
+                            if not next_fix.player_1_id:
+                                next_fix.player_1_id = winner_uid
+                                next_fix.player_1_name = winner_name
+                            elif not next_fix.player_2_id:
+                                next_fix.player_2_id = winner_uid
+                                next_fix.player_2_name = winner_name
+                            if next_fix.player_1_id and next_fix.player_2_id:
+                                next_fix.status = "READY"
+
+                    stmt_all = select(TournamentFixture).where(TournamentFixture.tournament_id == tournament_id)
+                    all_fixtures = (await session.execute(stmt_all)).scalars().all()
+                    if all_fixtures and all(f.status == "COMPLETED" for f in all_fixtures):
+                        tourn.status = "COMPLETED"
+                        tourn.winner_id = winner_uid
+                        tourn.winner_name = winner_name
+                    tourn.updated_at = time.time()
 
         # Authoritatively update user profiles if user IDs are present
         if p1_uid or p2_uid:

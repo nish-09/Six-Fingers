@@ -17,7 +17,8 @@ import {
   Users,
   Shield,
   RotateCw,
-  Lock
+  Lock,
+  Radio
 } from "lucide-react";
 import { soundEngine } from "@/lib/sound";
 import { speechManager } from "@/lib/speech";
@@ -25,6 +26,11 @@ import { gestureRecognizer, GestureResult } from "@/lib/vision/gestureRecognizer
 import { Scoreboard } from "./Scoreboard";
 import { CricketBallIcon, StarSticker } from "./Stickers";
 import { ChatDrawer, ChatMessageItem } from "./ChatDrawer";
+import { WebcamEffectsModal } from "./WebcamEffectsModal";
+import { VoiceEffectsModal } from "./VoiceEffectsModal";
+import { CinematicMatchOverlay } from "./CinematicMatchOverlay";
+import { WebcamEffectId, WebcamEffectsPipeline } from "@/lib/webcamEffects";
+import { VoicePresetId, globalAudioEffects } from "@/lib/audioEffects";
 
 interface LiveMatchViewProps {
   state: any;
@@ -45,6 +51,8 @@ interface LiveMatchViewProps {
   chatMessages?: ChatMessageItem[];
   onSendChat?: (channel: "all" | "team" | "spectator", text: string, reaction?: string) => void;
   onSendMessage?: (channel: string, text: string, reaction?: string) => void;
+  onApplyWebcamEffectTrack?: (track: MediaStreamTrack | null) => void;
+  onApplyVoiceEffectTrack?: (track: MediaStreamTrack | null) => void;
 }
 
 export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
@@ -66,10 +74,20 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
   chatMessages = [],
   onSendChat,
   onSendMessage,
+  onApplyWebcamEffectTrack,
+  onApplyVoiceEffectTrack,
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const filteredCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Effects & Modulator State
+  const [isEffectsModalOpen, setIsEffectsModalOpen] = useState(false);
+  const [activeWebcamEffect, setActiveWebcamEffect] = useState<WebcamEffectId>("none");
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [activeVoiceEffect, setActiveVoiceEffect] = useState<VoicePresetId>("normal");
+  const pipelineRef = useRef<WebcamEffectsPipeline | null>(null);
 
   // Media toggles
   const [isMicMuted, setIsMicMuted] = useState(false);
@@ -83,11 +101,25 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
   const [manualChosenNumber, setManualChosenNumber] = useState<number | null>(null);
   const [decisionSecondsLeft, setDecisionSecondsLeft] = useState<number>(5);
 
-  // Connect streams to video elements
+  // Connect streams to video elements and initialize effects pipeline
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
+      if (!pipelineRef.current) {
+        pipelineRef.current = new WebcamEffectsPipeline(640, 480);
+      }
+      pipelineRef.current.setVideoSource(localVideoRef.current);
     }
+  }, [localStream]);
+
+  // Audio Effects initialization
+  useEffect(() => {
+    if (localStream) {
+      globalAudioEffects.init(localStream);
+    }
+    return () => {
+      pipelineRef.current?.stop();
+    };
   }, [localStream]);
 
   useEffect(() => {
@@ -95,6 +127,60 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
       remoteVideoRef.current.srcObject = remoteStream;
     }
   }, [remoteStream]);
+
+  // Synchronize canvas animation loop for filtered display
+  useEffect(() => {
+    let animId: number;
+    const updateFilteredDisplay = () => {
+      if (activeWebcamEffect !== "none" && pipelineRef.current && filteredCanvasRef.current) {
+        const destCtx = filteredCanvasRef.current.getContext("2d");
+        if (destCtx) {
+          destCtx.clearRect(0, 0, 640, 480);
+          destCtx.drawImage(pipelineRef.current.getCanvas(), 0, 0);
+        }
+      }
+      animId = requestAnimationFrame(updateFilteredDisplay);
+    };
+    if (activeWebcamEffect !== "none") {
+      animId = requestAnimationFrame(updateFilteredDisplay);
+    }
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
+  }, [activeWebcamEffect]);
+
+  const handleSelectWebcamEffect = (fx: WebcamEffectId) => {
+    setActiveWebcamEffect(fx);
+    if (!pipelineRef.current) return;
+    pipelineRef.current.setEffect(fx);
+    if (fx !== "none") {
+      pipelineRef.current.start();
+      const track = pipelineRef.current.getProcessedTrack();
+      if (track && onApplyWebcamEffectTrack) {
+        onApplyWebcamEffectTrack(track);
+      }
+    } else {
+      pipelineRef.current.stop();
+      if (onApplyWebcamEffectTrack) {
+        onApplyWebcamEffectTrack(null);
+      }
+    }
+  };
+
+  const handleSelectVoicePreset = (preset: VoicePresetId) => {
+    setActiveVoiceEffect(preset);
+    globalAudioEffects.setPreset(preset);
+    if (preset !== "normal") {
+      const track = globalAudioEffects.getProcessedTrack();
+      if (track && onApplyVoiceEffectTrack) {
+        onApplyVoiceEffectTrack(track);
+      }
+    } else {
+      if (onApplyVoiceEffectTrack) {
+        onApplyVoiceEffectTrack(null);
+      }
+    }
+  };
 
   // Audio / Video track control
   const toggleMic = () => {
@@ -355,6 +441,24 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
                 height={480}
                 className="absolute inset-0 w-full h-full object-cover transform -scale-x-100 pointer-events-none"
               />
+              {/* Processed Filtered Video Canvas Overlay */}
+              <canvas
+                ref={filteredCanvasRef}
+                width={640}
+                height={480}
+                className={`absolute inset-0 w-full h-full object-cover pointer-events-none ${
+                  activeWebcamEffect !== "none" ? "block" : "hidden"
+                }`}
+              />
+
+              {/* In-Game Cinematic Delivery & Victory Celebration Overlay */}
+              <CinematicMatchOverlay
+                revealResult={latestRevealResult}
+                matchPhase={state.phase}
+                isWinner={state.winner_team_id === (isActiveBatting ? currentInnings?.batting_team_id : currentInnings?.bowling_team_id)}
+                winnerName={state.winner_team_id === state.team_a?.id ? state.team_a?.name : state.team_b?.name}
+                winnerGamerTag={state.winner_team_id === state.team_a?.id ? state.player_1_name : state.player_2_name}
+              />
 
               {/* Gesture Detection Feedback Tag */}
               {state.phase === "decision" && myLockedNumber === null && (
@@ -406,6 +510,32 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
                   title={isVideoDisabled ? "Turn Video On" : "Turn Video Off"}
                 >
                   {isVideoDisabled ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                </button>
+                {/* Webcam Effects Button */}
+                <button
+                  onClick={() => setIsEffectsModalOpen(true)}
+                  className={`px-2.5 py-1.5 rounded-lg border-2 border-[#111111] text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-brutal-sm ${
+                    activeWebcamEffect !== "none"
+                      ? "bg-[#FFD900] text-black"
+                      : "bg-[#FFF9E8] text-[#111111] hover:bg-[#FFD900]"
+                  }`}
+                  title="Webcam Filters & Avatar Effects"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#F000A8]" />
+                  <span>Filters {activeWebcamEffect !== "none" && "✓"}</span>
+                </button>
+                {/* Voice Effects Button */}
+                <button
+                  onClick={() => setIsVoiceModalOpen(true)}
+                  className={`px-2.5 py-1.5 rounded-lg border-2 border-[#111111] text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-brutal-sm ${
+                    activeVoiceEffect !== "normal"
+                      ? "bg-[#F000A8] text-white"
+                      : "bg-[#FFF9E8] text-[#111111] hover:bg-[#F000A8] hover:text-white"
+                  }`}
+                  title="Real-Time Voice Effects & Modulator"
+                >
+                  <Radio className="w-3.5 h-3.5" />
+                  <span>Voice {activeVoiceEffect !== "normal" && "✓"}</span>
                 </button>
               </div>
               <span className="text-[11px] text-[#FFF9E8] font-bold font-mono">
@@ -817,6 +947,24 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
               onSendMessage(channel, text, reaction);
             }
           }}
+        />
+      )}
+
+      {/* 8. WEBCAM EFFECTS MODAL */}
+      {isEffectsModalOpen && (
+        <WebcamEffectsModal
+          currentEffect={activeWebcamEffect}
+          onSelectEffect={handleSelectWebcamEffect}
+          onClose={() => setIsEffectsModalOpen(false)}
+        />
+      )}
+
+      {/* 9. VOICE EFFECTS & MODULATOR MODAL */}
+      {isVoiceModalOpen && (
+        <VoiceEffectsModal
+          currentPreset={activeVoiceEffect}
+          onSelectPreset={handleSelectVoicePreset}
+          onClose={() => setIsVoiceModalOpen(false)}
         />
       )}
     </div>
