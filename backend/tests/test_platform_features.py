@@ -33,15 +33,38 @@ def test_auth_registration_and_validation():
     assert data["profile"]["display_name"] == "Nishit Patel"
     assert "#" in data["profile"]["gamer_tag"]
 
-    # 2. Reject duplicate username
-    r_dup_user = client.post("/api/auth/register", json={
-        "full_name": "Another Nishit",
-        "username": "nishit09",
-        "email": "diff@example.com",
+    # 2. Test composite uniqueness: Same username with same gamer_tag fails, different gamer_tag succeeds
+    r_custom = client.post("/api/auth/register", json={
+        "full_name": "Player One",
+        "username": "legend",
+        "gamer_tag": "#4821",
+        "email": "legend1@example.com",
         "password": "Password123!"
     })
-    assert r_dup_user.status_code == 400
-    assert "username is already taken" in r_dup_user.json()["detail"].lower()
+    assert r_custom.status_code == 200
+    assert r_custom.json()["profile"]["gamer_tag"] == "legend#4821"
+
+    # Same username + same gamer tag -> MUST FAIL
+    r_dup_combo = client.post("/api/auth/register", json={
+        "full_name": "Player Two",
+        "username": "legend",
+        "gamer_tag": "#4821",
+        "email": "legend2@example.com",
+        "password": "Password123!"
+    })
+    assert r_dup_combo.status_code == 400
+    assert "already registered" in str(r_dup_combo.json()["detail"]).lower()
+
+    # Same username + DIFFERENT gamer tag -> MUST SUCCEED (Section 5 requirement)
+    r_diff_tag = client.post("/api/auth/register", json={
+        "full_name": "Player Three",
+        "username": "legend",
+        "gamer_tag": "#9375",
+        "email": "legend3@example.com",
+        "password": "Password123!"
+    })
+    assert r_diff_tag.status_code == 200
+    assert r_diff_tag.json()["profile"]["gamer_tag"] == "legend#9375"
 
     # 3. Reject duplicate email
     r_dup_email = client.post("/api/auth/register", json={
@@ -85,7 +108,7 @@ def test_auth_login_me_and_logout():
     assert r_me.status_code == 200
     me_data = r_me.json()
     assert me_data["user"]["username"] == "gamerone"
-    assert me_data["profile"]["gamer_tag"].startswith("GamerOne#")
+    assert me_data["profile"]["gamer_tag"].startswith("gamerone#")
 
     # Reject invalid password
     r_bad = client.post("/api/auth/login", json={
@@ -115,8 +138,8 @@ def test_gamer_tag_collision_safety():
     tag1 = r1.json()["profile"]["gamer_tag"]
     tag2 = r2.json()["profile"]["gamer_tag"]
 
-    assert tag1.startswith("ShadowStriker#")
-    assert tag2.startswith("ShadowStriker#")
+    assert tag1.startswith("striker1#")
+    assert tag2.startswith("striker2#")
     assert tag1 != tag2 # Collision prevention guaranteed!
 
 def test_profile_update_and_public_view():

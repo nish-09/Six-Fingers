@@ -95,9 +95,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-8 animate-in fade-in duration-300">
       {/* Gamer Hero Banner */}
-      <div className="bg-[#6500C8] border-4 border-black shadow-[8px_8px_0px_#111] p-6 text-white relative overflow-hidden">
+      <div className="bg-[#FFD900] border-4 border-black shadow-[8px_8px_0px_#111] p-6 text-[#111111] relative overflow-hidden">
         {/* Decorative Grid Lines */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none bg-[radial-gradient(#FFD900_2px,transparent_2px)] [background-size:16px_16px]" />
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 pointer-events-none bg-[radial-gradient(#6500C8_2px,transparent_2px)] [background-size:16px_16px]" />
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-4">
@@ -108,18 +108,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl md:text-4xl font-black font-display text-[#FFD900] tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-black font-display text-[#111111] tracking-tight">
                   {profile?.gamer_tag || "Player#001"}
                 </h1>
-                <span className="bg-[#F000A8] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded border border-black shadow-[2px_2px_0px_#111]">
+                <span className="bg-[#6500C8] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded border border-black shadow-[2px_2px_0px_#111]">
                   PRO
                 </span>
               </div>
-              <div className="text-xs md:text-sm font-extrabold text-[#FFF9E8] mt-1">
-                {profile?.display_name || user?.full_name} · <span className="text-[#9BE52E]">{profile?.favorite_team}</span> · {profile?.batting_style}
+              <div className="text-xs md:text-sm font-black text-gray-800 mt-1">
+                {profile?.display_name || user?.full_name} · <span className="text-[#6500C8] font-black">{profile?.custom_team_name || profile?.favorite_team}</span> · {profile?.batting_style}
               </div>
               {profile?.bio && (
-                <p className="text-xs text-gray-300 font-bold mt-1 max-w-lg italic">
+                <p className="text-xs text-gray-700 font-bold mt-1 max-w-lg italic">
                   &ldquo;{profile.bio}&rdquo;
                 </p>
               )}
@@ -128,11 +128,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Quick Stats Pill */}
           <div className="flex items-center gap-3">
-            <div className="bg-black border-3 border-black shadow-[4px_4px_0px_#FFD900] p-3 text-center min-w-[90px]">
+            <div className="bg-black border-3 border-black shadow-[4px_4px_0px_#6500C8] p-3 text-center min-w-[90px] text-white">
               <div className="text-[10px] font-black uppercase text-gray-400">Win Rate</div>
               <div className="text-2xl font-black font-display text-[#9BE52E]">{winRate}%</div>
             </div>
-            <div className="bg-black border-3 border-black shadow-[4px_4px_0px_#F000A8] p-3 text-center min-w-[90px]">
+            <div className="bg-black border-3 border-black shadow-[4px_4px_0px_#F000A8] p-3 text-center min-w-[90px] text-white">
               <div className="text-[10px] font-black uppercase text-gray-400">Streak</div>
               <div className="text-2xl font-black font-display text-[#FFD900] flex items-center justify-center gap-1">
                 {currentStreak} <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
@@ -145,12 +145,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Primary Battle Launcher & Quick Actions */}
       <section aria-labelledby="quick-play-heading" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Giant Quick Play Button */}
-        <div className="lg:col-span-7 bg-[#FFD900] border-4 border-black shadow-[8px_8px_0px_#111] p-6 flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-[#240046] border-4 border-[#FFD900] shadow-[8px_8px_0px_#FFD900] p-6 flex flex-col justify-between text-white">
           <div>
-            <h2 id="quick-play-heading" className="text-3xl sm:text-4xl font-black font-display text-black uppercase tracking-tight leading-none">
+            <h2 id="quick-play-heading" className="text-3xl sm:text-4xl font-black font-display text-[#FFD900] uppercase tracking-tight leading-none">
               Quick Play Arena
             </h2>
-            <p className="text-sm font-bold text-gray-800 mt-2 max-w-md">
+            <p className="text-sm font-bold text-[#E2D9F3] mt-2 max-w-md">
               Instant matchmaking with live rivals worldwide. Authoritative cricket rules, computer-vision gesture recognition, and verified stats.
             </p>
           </div>
@@ -161,12 +161,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 soundEngine.playClick();
                 onStartQuickPlay();
               }}
-              className="w-full py-5 bg-[#6500C8] hover:bg-[#5200a3] text-white border-4 border-black shadow-[6px_6px_0px_#111] font-display font-black text-2xl uppercase tracking-wider flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 active:translate-x-1 active:translate-y-1"
+              className="w-full py-5 bg-[#FFD900] hover:bg-[#ffe338] text-[#111111] border-4 border-black shadow-[6px_6px_0px_#111] font-display font-black text-2xl uppercase tracking-wider flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 active:translate-x-1 active:translate-y-1"
             >
-              <Swords className="w-7 h-7 text-[#FFD900]" />
+              <Swords className="w-7 h-7 text-[#6500C8]" />
               <span>Launch Quick Play</span>
             </button>
-            <div className="flex items-center justify-between text-xs font-bold text-gray-800 mt-3">
+            <div className="flex items-center justify-between text-xs font-bold text-gray-300 mt-3">
               <span>⚡ Fair wait-time matchmaking</span>
               <span>🔒 Zero-client-trust security</span>
             </div>

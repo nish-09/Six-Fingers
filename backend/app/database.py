@@ -6,7 +6,7 @@ import asyncio
 from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, Float, Boolean, Text, select, desc, or_, and_, text, inspect
+from sqlalchemy import String, Integer, Float, Boolean, Text, select, desc, or_, and_, text, inspect, UniqueConstraint
 from sqlalchemy.engine import make_url
 
 def get_safe_database_description(url_str: str) -> str:
@@ -185,9 +185,13 @@ class Base(DeclarativeBase):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        UniqueConstraint("username", "gamer_tag", name="uq_users_username_gamer_tag"),
+    )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    username: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(32), index=True)
+    gamer_tag: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     email: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(100))
@@ -202,14 +206,16 @@ class Profile(Base):
 
     user_id: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
     display_name: Mapped[str] = mapped_column(String(64), index=True)
-    gamer_tag: Mapped[str] = mapped_column(String(64), unique=True, index=True) # e.g. Nishit#009
+    gamer_tag: Mapped[str] = mapped_column(String(64), unique=True, index=True) # e.g. player123#4821
     tag_number: Mapped[int] = mapped_column(Integer, index=True)
-    avatar_url: Mapped[str] = mapped_column(String(255), default="avatar_1")
+    avatar_url: Mapped[str] = mapped_column(Text, default="avatar_1")
     bio: Mapped[str] = mapped_column(String(255), default="Hand Cricket champion ready to dominate the pitch!")
     age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     country: Mapped[str] = mapped_column(String(64), default="India")
     favorite_team: Mapped[str] = mapped_column(String(64), default="Mumbai Blasters")
-    batting_style: Mapped[str] = mapped_column(String(64), default="Aggressive Six-Hitter")
+    custom_team_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    batting_style: Mapped[str] = mapped_column(String(64), default="Right-handed")
+    bowling_style: Mapped[str] = mapped_column(String(64), default="Right-arm medium")
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
     show_age: Mapped[bool] = mapped_column(Boolean, default=False)
     show_stats: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -398,6 +404,37 @@ def _migrate_match_records_columns(sync_conn):
         if "tournament_id" not in existing_cols:
             sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN tournament_id VARCHAR(64)"))
 
+def _migrate_auth_and_profile_columns(sync_conn):
+    insp = inspect(sync_conn)
+    table_names = insp.get_table_names()
+    dialect_name = getattr(sync_conn.dialect, "name", "").lower()
+    is_pg = "postgresql" in dialect_name or "postgres" in dialect_name
+
+    if "users" in table_names:
+        user_cols = {c["name"] for c in insp.get_columns("users")}
+        if "gamer_tag" not in user_cols:
+            sync_conn.execute(text("ALTER TABLE users ADD COLUMN gamer_tag VARCHAR(64)"))
+        if is_pg:
+            try:
+                sync_conn.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key"))
+                sync_conn.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS uq_users_username"))
+                sync_conn.execute(text("DROP INDEX IF EXISTS ix_users_username"))
+                sync_conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_username ON users (username)"))
+            except Exception as e:
+                print(f"[Schema Migration Info] Username constraint relax note: {e}", flush=True)
+
+    if "profiles" in table_names:
+        prof_cols = {c["name"] for c in insp.get_columns("profiles")}
+        if "custom_team_name" not in prof_cols:
+            sync_conn.execute(text("ALTER TABLE profiles ADD COLUMN custom_team_name VARCHAR(64)"))
+        if "bowling_style" not in prof_cols:
+            sync_conn.execute(text("ALTER TABLE profiles ADD COLUMN bowling_style VARCHAR(64) DEFAULT 'Right-arm medium'"))
+        if is_pg:
+            try:
+                sync_conn.execute(text("ALTER TABLE profiles ALTER COLUMN avatar_url TYPE TEXT"))
+            except Exception as e:
+                print(f"[Schema Migration Info] Avatar column type note: {e}", flush=True)
+
 async def init_db(max_retries: int = 3, retry_delay: float = 2.0):
     """
     Initializes database schema with retry resilience for cold-starts and connection handshakes.
@@ -416,6 +453,10 @@ async def init_db(max_retries: int = 3, retry_delay: float = 2.0):
                 await conn.run_sync(Base.metadata.create_all)
                 try:
                     await conn.run_sync(_migrate_match_records_columns)
+                except Exception as e:
+                    print(f"[Database Schema Warning] {e}", flush=True)
+                try:
+                    await conn.run_sync(_migrate_auth_and_profile_columns)
                 except Exception as e:
                     print(f"[Database Schema Warning] {e}", flush=True)
 

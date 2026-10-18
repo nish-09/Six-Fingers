@@ -89,18 +89,18 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* 1. TOP BANNER: Room Code, Invite, Spectator Counter */}
-      <div className="bg-[#6500C8] border-4 border-[#111111] rounded-2xl shadow-brutal p-4 sm:p-6 text-white flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[#FFD900] border-4 border-[#111111] rounded-2xl shadow-brutal p-4 sm:p-6 text-[#111111] flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="bg-[#9BE52E] text-black text-xs font-mono font-black uppercase px-2.5 py-1 rounded-md border-2 border-black flex items-center gap-1.5">
+            <span className="bg-[#6500C8] text-white text-xs font-mono font-black uppercase px-2.5 py-1 rounded-md border-2 border-black flex items-center gap-1.5">
               <Eye className="w-3.5 h-3.5" />
               <span>{state.spectator_count || spectators.length} Spectators</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black font-display text-[#FFD900]">
-            Room Code: <span className="font-mono tracking-widest text-white">{roomCode}</span>
+          <h1 className="text-2xl sm:text-3xl font-black font-display text-[#111111]">
+            Room Code: <span className="font-mono tracking-widest text-[#6500C8]">{roomCode}</span>
           </h1>
-          <p className="text-xs text-[#FFF9E8] font-bold mt-1">
+          <p className="text-xs text-gray-800 font-bold mt-1">
             Share code or invite link for friends to play or watch live.
           </p>
         </div>
@@ -108,9 +108,9 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={copyCode}
-            className="btn-brutal-yellow px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5"
+            className="btn-brutal-purple px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5"
           >
-            {copiedCode ? <Check className="w-4 h-4 text-green-700" /> : <Copy className="w-4 h-4" />}
+            {copiedCode ? <Check className="w-4 h-4 text-[#9BE52E]" /> : <Copy className="w-4 h-4" />}
             <span>{copiedCode ? "COPIED CODE!" : "COPY CODE"}</span>
           </button>
 

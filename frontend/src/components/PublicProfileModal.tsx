@@ -50,16 +50,17 @@ export const PublicProfileModal: React.FC<PublicProfileModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-[#FFF9E8] border-4 border-black shadow-[10px_10px_0px_#111] overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="bg-[#6500C8] p-4 border-b-4 border-black flex items-center justify-between text-white">
+        {/* Header - Inverted Palette */}
+        <div className="bg-[#FFD900] p-4 border-b-4 border-black flex items-center justify-between text-black">
           <div className="flex items-center gap-2">
-            <Trophy className="w-6 h-6 text-[#FFD900]" />
-            <span className="font-extrabold text-xl tracking-wider uppercase font-display">
+            <Trophy className="w-6 h-6 text-[#1A0038]" />
+            <span className="font-extrabold text-xl tracking-wider uppercase font-display text-black">
               Player Dossier
             </span>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-8 h-8 rounded-full bg-[#F000A8] border-2 border-black flex items-center justify-center text-white hover:bg-black transition-colors"
           >
             <X className="w-5 h-5" />

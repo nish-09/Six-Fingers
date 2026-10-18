@@ -81,11 +81,11 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
       {/* Slide-in Chat Drawer */}
       {isOpen && (
         <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-50 w-[95vw] sm:w-96 max-h-[85vh] h-[550px] bg-[#FFF9E8] border-4 border-[#111111] rounded-2xl shadow-brutal-lg flex flex-col overflow-hidden animate-pop">
-          {/* Header */}
-          <div className="bg-[#6500C8] border-b-3 border-[#111111] p-3 text-white flex items-center justify-between">
+          {/* Header - Inverted Palette */}
+          <div className="bg-[#FFD900] border-b-3 border-[#111111] p-3 text-black flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#FFD900]" />
-              <h3 className="font-display font-black text-sm uppercase text-[#FFD900] tracking-wider">
+              <MessageSquare className="w-5 h-5 text-[#1A0038]" />
+              <h3 className="font-display font-black text-sm uppercase text-black tracking-wider">
                 LIVE MATCH CHAT
               </h3>
             </div>

@@ -5,23 +5,27 @@
 @tailwind utilities;
 
 :root {
+  --bg-dark: #1A0038;
   --bg-yellow: #FFD900;
   --panel-purple: #6500C8;
+  --panel-yellow: #FFD900;
   --accent-pink: #F000A8;
   --accent-green: #9BE52E;
+  --fg-white: #FFFFFF;
   --fg-black: #111111;
   --card-cream: #FFF9E8;
+  --card-dark: #240046;
   --font-bricolage: 'Bricolage Grotesque', sans-serif;
   --font-space: 'Space Grotesk', sans-serif;
 }
 
 body {
-  background-color: var(--bg-yellow);
-  color: var(--fg-black);
+  background-color: #1A0038;
+  color: #FFFFFF;
   font-family: var(--font-space);
   background-image: 
-    linear-gradient(rgba(17, 17, 17, 0.08) 2px, transparent 2px),
-    linear-gradient(90deg, rgba(17, 17, 17, 0.08) 2px, transparent 2px);
+    linear-gradient(rgba(255, 217, 0, 0.08) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(255, 217, 0, 0.08) 2px, transparent 2px);
   background-size: 32px 32px;
   background-position: -2px -2px;
   min-height: 100vh;
@@ -121,13 +125,29 @@ body {
   box-shadow: 2px 2px 0 #111111;
 }
 
-/* Neo-brutalist Panels */
+/* Neo-brutalist Panels - Inverted Primary Role */
 .panel-brutal-purple {
-  background-color: #6500C8;
-  color: #FFFFFF;
+  background-color: #FFD900;
+  color: #111111;
   border: 4px solid #111111;
   border-radius: 20px;
   box-shadow: 8px 8px 0 #111111;
+}
+
+.panel-brutal-yellow {
+  background-color: #FFD900;
+  color: #111111;
+  border: 4px solid #111111;
+  border-radius: 20px;
+  box-shadow: 8px 8px 0 #111111;
+}
+
+.panel-brutal-dark {
+  background-color: #240046;
+  color: #FFFFFF;
+  border: 4px solid #FFD900;
+  border-radius: 20px;
+  box-shadow: 8px 8px 0 #FFD900;
 }
 
 .panel-brutal-cream {
@@ -152,11 +172,11 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #FFD900;
-  border-left: 2px solid #111111;
+  background: #1A0038;
+  border-left: 2px solid #FFD900;
 }
 ::-webkit-scrollbar-thumb {
-  background: #6500C8;
+  background: #FFD900;
   border: 2px solid #111111;
   border-radius: 4px;
 }

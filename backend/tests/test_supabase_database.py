@@ -112,6 +112,7 @@ async def test_model_crud_and_transaction_rollback():
         user = User(
             id="u_test_tx_1",
             username="test_tx_user",
+            gamer_tag="test_tx_user#001",
             email="tx_user@example.com",
             password_hash="argon2_fake_hash",
             full_name="Transaction Test",
@@ -124,6 +125,7 @@ async def test_model_crud_and_transaction_rollback():
         duplicate_user = User(
             id="u_test_tx_2",
             username="test_tx_user", # Duplicate!
+            gamer_tag="test_tx_user#001",
             email="another_email@example.com",
             password_hash="argon2_fake_hash_2",
             full_name="Duplicate User",

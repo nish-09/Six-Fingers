@@ -81,13 +81,13 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
         {/* HERO TITLE */}
         <div className="space-y-3">
-          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black font-display tracking-tight text-[#111111] uppercase drop-shadow-[5px_5px_0px_#F000A8]">
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black font-display tracking-tight text-[#FFD900] uppercase drop-shadow-[5px_5px_0px_#F000A8]">
             SIX FINGERS
           </h1>
-          <p className="text-xl sm:text-2xl font-black font-display text-[#6500C8] uppercase tracking-wide">
+          <p className="text-xl sm:text-2xl font-black font-display text-[#FFF9E8] uppercase tracking-wide">
             MULTIPLAYER HAND CRICKET ARENA
           </p>
-          <p className="text-sm sm:text-base font-bold text-gray-800 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base font-bold text-[#E2D9F3] max-w-2xl mx-auto">
             Play real-time hand cricket with friends using webcams, computer-vision finger tracking,
             secret simultaneous locking, and multilingual commentary.
           </p>
@@ -101,9 +101,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 soundEngine.playClick();
                 onStartQuickPlay();
               }}
-              className="flex-1 min-w-[220px] py-3.5 px-6 bg-[#6500C8] hover:bg-[#5200a3] text-white border-4 border-black shadow-[6px_6px_0px_#111] font-display font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-transform hover:-translate-y-1 active:translate-x-1 active:translate-y-1"
+              className="flex-1 min-w-[220px] py-3.5 px-6 bg-[#FFD900] hover:bg-[#ffe338] text-[#111111] border-4 border-black shadow-[6px_6px_0px_#111] font-display font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-transform hover:-translate-y-1 active:translate-x-1 active:translate-y-1"
             >
-              <Zap className="w-5 h-5 text-[#FFD900] fill-[#FFD900]" />
+              <Zap className="w-5 h-5 text-[#6500C8] fill-[#6500C8]" />
               <span>Quick Play Matchmaking</span>
             </button>
           )}
@@ -121,8 +121,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           )}
         </div>
 
-        {/* ACTION PANEL: CREATE OR JOIN MATCH (Vivid Purple Container) */}
-        <div className="max-w-xl mx-auto panel-brutal-purple p-5 sm:p-7 text-white text-left relative z-10">
+        {/* ACTION PANEL: CREATE OR JOIN MATCH (Vivid Yellow Container in Inverted Palette) */}
+        <div className="max-w-xl mx-auto panel-brutal-purple p-5 sm:p-7 text-[#111111] text-left relative z-10">
           <div className="flex border-b-3 border-black pb-3 mb-5 gap-2">
             <button
               onClick={() => {
@@ -131,8 +131,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               }}
               className={`flex-1 py-2.5 rounded-xl font-display font-black text-sm uppercase transition-all ${
                 activeTab === "create"
-                  ? "bg-[#FFD900] text-[#111111] border-3 border-black shadow-brutal-sm"
-                  : "bg-transparent text-white hover:bg-white/10"
+                  ? "bg-[#6500C8] text-white border-3 border-black shadow-brutal-sm"
+                  : "bg-transparent text-[#111111] hover:bg-black/10"
               }`}
             >
               CREATE MATCH ROOM
@@ -144,8 +144,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               }}
               className={`flex-1 py-2.5 rounded-xl font-display font-black text-sm uppercase transition-all ${
                 activeTab === "join"
-                  ? "bg-[#9BE52E] text-[#111111] border-3 border-black shadow-brutal-sm"
-                  : "bg-transparent text-white hover:bg-white/10"
+                  ? "bg-[#F000A8] text-white border-3 border-black shadow-brutal-sm"
+                  : "bg-transparent text-[#111111] hover:bg-black/10"
               }`}
             >
               JOIN WITH CODE
@@ -155,7 +155,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           {activeTab === "create" ? (
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label htmlFor="host-name-input" className="block text-xs font-black uppercase text-[#FFD900] mb-1">
+                <label htmlFor="host-name-input" className="block text-xs font-black uppercase text-[#111111] mb-1">
                   Your Name / Gamer Tag:
                 </label>
                 <input
@@ -172,7 +172,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {/* Team Mode & Spectators Configuration */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label htmlFor="players-per-team-select" className="block text-[11px] font-black uppercase text-[#FFF9E8] mb-1">
+                  <label htmlFor="players-per-team-select" className="block text-[11px] font-black uppercase text-[#111111] mb-1">
                     Format:
                   </label>
                   <select
@@ -189,7 +189,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="max-spectators-select" className="block text-[11px] font-black uppercase text-[#FFF9E8] mb-1">
+                  <label htmlFor="max-spectators-select" className="block text-[11px] font-black uppercase text-[#111111] mb-1">
                     Max Spectators:
                   </label>
                   <select

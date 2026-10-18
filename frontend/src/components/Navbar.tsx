@@ -69,23 +69,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="w-full bg-[#6500C8] border-b-4 border-[#111111] px-4 py-2.5 sticky top-0 z-40 shadow-brutal">
+    <header className="w-full bg-[#FFD900] border-b-4 border-[#111111] px-4 py-2.5 sticky top-0 z-40 shadow-brutal text-[#111111]">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
         {/* Brand Logo & Tagline */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FFD900] border-3 border-[#111111] flex items-center justify-center shadow-brutal-sm flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#6500C8] border-3 border-[#111111] flex items-center justify-center shadow-brutal-sm flex-shrink-0 text-[#FFD900]">
             <CricketBallIcon className="w-7 h-7" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-2xl sm:text-3xl font-black text-[#FFD900] font-display tracking-tight leading-none drop-shadow-[2px_2px_0px_#111111]">
+              <span className="text-2xl sm:text-3xl font-black text-[#111111] font-display tracking-tight leading-none drop-shadow-[2px_2px_0px_rgba(101,0,200,0.3)]">
                 SIX FINGERS
               </span>
-              <span className="hidden sm:inline-block bg-[#9BE52E] text-[#111111] text-[10px] font-black uppercase px-2 py-0.5 rounded-full border-2 border-[#111111]">
+              <span className="hidden sm:inline-block bg-[#F000A8] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full border-2 border-[#111111]">
                 PRO GAMING
               </span>
             </div>
-            <p className="text-[10px] sm:text-xs text-[#FFF9E8] font-extrabold tracking-wide">
+            <p className="text-[10px] sm:text-xs text-[#6500C8] font-black tracking-wide">
               TWO HANDS. ONE RIVALRY.
             </p>
           </div>
@@ -94,14 +94,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Room Code Indicator & Live Spectators */}
         {roomCode && (
           <div className="flex items-center gap-2">
-            <div className="bg-[#FFF9E8] border-3 border-[#111111] px-3 py-1 rounded-xl shadow-brutal-sm flex items-center gap-2">
-              <span className="text-[11px] font-bold text-gray-600 uppercase">ROOM:</span>
+            <div className="bg-white border-3 border-[#111111] px-3 py-1 rounded-xl shadow-brutal-sm flex items-center gap-2">
+              <span className="text-[11px] font-bold text-gray-700 uppercase">ROOM:</span>
               <span className="text-sm font-black font-mono text-[#6500C8] tracking-wider">{roomCode}</span>
             </div>
 
             {spectatorCount > 0 && (
-              <div className="bg-[#FFD900] text-[#111111] border-3 border-[#111111] px-2.5 py-1 rounded-xl shadow-brutal-sm flex items-center gap-1.5 font-mono font-black text-xs">
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
+              <div className="bg-[#F000A8] text-white border-3 border-[#111111] px-2.5 py-1 rounded-xl shadow-brutal-sm flex items-center gap-1.5 font-mono font-black text-xs">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                 <span>👁️ {spectatorCount}</span>
                 <span className="hidden md:inline text-[10px] font-bold uppercase">WATCHING</span>
               </div>
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {userRole && (
               <span
                 className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg border-2 border-[#111111] shadow-brutal-sm ${
-                  userRole === "spectator" ? "bg-[#FFF9E8] text-purple-950" : "bg-[#9BE52E] text-black"
+                  userRole === "spectator" ? "bg-white text-purple-950" : "bg-[#9BE52E] text-black"
                 }`}
               >
                 {userRole === "spectator" ? "SPECTATOR 👁️" : "PLAYER 🏏"}
@@ -128,9 +128,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 soundEngine.playClick();
                 onStartQuickPlay();
               }}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD900] hover:bg-[#ffe338] text-black border-3 border-black rounded-xl font-display font-black text-xs uppercase shadow-brutal-sm transition-transform active:translate-x-0.5 active:translate-y-0.5"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#6500C8] hover:bg-[#5200a3] text-white border-3 border-black rounded-xl font-display font-black text-xs uppercase shadow-brutal-sm transition-transform active:translate-x-0.5 active:translate-y-0.5"
             >
-              <Swords className="w-4 h-4" />
+              <Swords className="w-4 h-4 text-[#FFD900]" />
               <span>Quick Play</span>
             </button>
           )}

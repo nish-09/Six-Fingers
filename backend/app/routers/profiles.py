@@ -16,7 +16,9 @@ class UpdateProfileRequest(BaseModel):
     age: Optional[int] = Field(None, ge=10, le=120)
     country: Optional[str] = Field(None, max_length=64)
     favorite_team: Optional[str] = Field(None, max_length=64)
+    custom_team_name: Optional[str] = Field(None, max_length=64)
     batting_style: Optional[str] = Field(None, max_length=64)
+    bowling_style: Optional[str] = Field(None, max_length=64)
     is_public: Optional[bool] = None
     show_age: Optional[bool] = None
     show_stats: Optional[bool] = None
@@ -141,7 +143,9 @@ async def get_public_profile(identifier: str):
             "bio": profile.bio,
             "country": profile.country,
             "favorite_team": profile.favorite_team,
+            "custom_team_name": profile.custom_team_name or profile.favorite_team,
             "batting_style": profile.batting_style,
+            "bowling_style": profile.bowling_style,
             "age": profile.age if profile.show_age else None,
             "total_matches": profile.total_matches if profile.show_stats else None,
             "matches_won": profile.matches_won if profile.show_stats else None,
@@ -184,8 +188,13 @@ async def update_my_profile(
             profile.country = req.country.strip()
         if req.favorite_team is not None:
             profile.favorite_team = req.favorite_team.strip()
+        if req.custom_team_name is not None:
+            profile.custom_team_name = req.custom_team_name.strip()
+            profile.favorite_team = req.custom_team_name.strip()
         if req.batting_style is not None:
             profile.batting_style = req.batting_style.strip()
+        if req.bowling_style is not None:
+            profile.bowling_style = req.bowling_style.strip()
         if req.is_public is not None:
             profile.is_public = req.is_public
         if req.show_age is not None:
@@ -210,7 +219,9 @@ async def update_my_profile(
                 "age": profile.age if profile.show_age else None,
                 "country": profile.country,
                 "favorite_team": profile.favorite_team,
+                "custom_team_name": profile.custom_team_name or profile.favorite_team,
                 "batting_style": profile.batting_style,
+                "bowling_style": profile.bowling_style,
                 "total_matches": profile.total_matches,
                 "matches_won": profile.matches_won,
                 "matches_lost": profile.matches_lost,

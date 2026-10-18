@@ -6,6 +6,7 @@ import { getApiBaseUrl } from "./config";
 export interface User {
   id: string;
   username: string;
+  gamer_tag?: string;
   email: string;
   full_name: string;
   created_at?: number;
@@ -22,7 +23,9 @@ export interface Profile {
   age?: number | null;
   country?: string;
   favorite_team?: string;
+  custom_team_name?: string;
   batting_style?: string;
+  bowling_style?: string;
   total_matches: number;
   matches_won: number;
   matches_lost: number;

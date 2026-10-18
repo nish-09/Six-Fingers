@@ -27,6 +27,14 @@ export const AVATAR_OPTIONS = [
 export const AvatarIcon: React.FC<AvatarProps> = ({ id = "avatar_1", size = "md", className = "" }) => {
   const sizeCls = sizeClasses[size];
 
+  if (id && (id.startsWith("data:image") || id.startsWith("http://") || id.startsWith("https://") || id.startsWith("/"))) {
+    return (
+      <div className={`${sizeCls} rounded-full bg-white border-2 border-black flex items-center justify-center overflow-hidden shadow-[2px_2px_0px_#000] ${className}`}>
+        <img src={id} alt="Avatar" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+
   switch (id) {
     case "avatar_2":
       // Electric Sixer
