@@ -57,10 +57,8 @@ def configure_database(
     is_sqlite = "sqlite" in clean_url.lower()
 
     if is_sqlite:
-        from sqlalchemy.pool import NullPool
         engine_kwargs: Dict[str, Any] = {
             "echo": False,
-            "poolclass": NullPool,
             "connect_args": {"check_same_thread": False}
         }
     else:

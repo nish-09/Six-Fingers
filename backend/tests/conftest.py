@@ -23,7 +23,6 @@ def clean_room_manager_and_db():
             await session.execute(text("DELETE FROM profiles"))
             await session.execute(text("DELETE FROM users"))
             await session.commit()
-        await engine.dispose()
     asyncio.run(cleanup())
     room_manager.rooms.clear()
     matchmaking_coordinator.queue.clear()

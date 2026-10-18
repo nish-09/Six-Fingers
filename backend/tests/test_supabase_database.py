@@ -61,10 +61,8 @@ def test_development_sqlite_default():
 @pytest.mark.asyncio
 async def test_database_health_check_operational():
     """Verify check_db_health executes SELECT 1 successfully."""
-    from app.database import engine
     is_healthy = await check_db_health()
     assert is_healthy is True
-    await engine.dispose()
 
 @pytest.mark.asyncio
 async def test_model_crud_and_transaction_rollback():
