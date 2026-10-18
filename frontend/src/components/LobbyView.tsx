@@ -91,20 +91,17 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       {/* 1. TOP BANNER: Room Code, Invite, Spectator Counter */}
       <div className="bg-[#6500C8] border-4 border-[#111111] rounded-2xl shadow-brutal p-4 sm:p-6 text-white flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-[#FFD900] text-[#111111] text-xs font-black uppercase px-2.5 py-1 rounded-md border-2 border-black">
-              SIX FINGERS LOBBY
-            </span>
-            <span className="bg-[#9BE52E] text-black text-xs font-mono font-black uppercase px-2 py-0.5 rounded-md border-2 border-black flex items-center gap-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="bg-[#9BE52E] text-black text-xs font-mono font-black uppercase px-2.5 py-1 rounded-md border-2 border-black flex items-center gap-1.5">
               <Eye className="w-3.5 h-3.5" />
-              <span>{state.spectator_count || spectators.length} SPECTATORS</span>
+              <span>{state.spectator_count || spectators.length} Spectators</span>
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black font-display text-[#FFD900]">
-            ROOM CODE: <span className="font-mono tracking-widest text-white">{roomCode}</span>
-          </h2>
-          <p className="text-xs text-[#FFF9E8] font-bold mt-0.5">
-            Share code or invite link for friends to play or watch live!
+          <h1 className="text-2xl sm:text-3xl font-black font-display text-[#FFD900]">
+            Room Code: <span className="font-mono tracking-widest text-white">{roomCode}</span>
+          </h1>
+          <p className="text-xs text-[#FFF9E8] font-bold mt-1">
+            Share code or invite link for friends to play or watch live.
           </p>
         </div>
 
@@ -169,9 +166,9 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
 
             {/* Human Participants on Team 1 */}
             <div className="space-y-2 mt-2">
-              <div className="text-[11px] font-black uppercase text-gray-500 flex items-center gap-1">
+              <div className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-[#6500C8]" />
-                <span>CONNECTED TEAMMATES:</span>
+                <span>Active Players</span>
               </div>
 
               {teamAPlayers.length === 0 ? (
@@ -276,9 +273,9 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
 
             {/* Human Participants on Team 2 */}
             <div className="space-y-2 mt-2">
-              <div className="text-[11px] font-black uppercase text-gray-500 flex items-center gap-1">
+              <div className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-[#F000A8]" />
-                <span>CONNECTED TEAMMATES:</span>
+                <span>Active Players</span>
               </div>
 
               {teamBPlayers.length === 0 ? (
@@ -400,7 +397,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         {/* Spectator Avatars / List */}
         {spectators.length === 0 ? (
           <p className="text-xs text-gray-500 font-mono italic py-2">
-            No spectators watching right now. Friends joining with code can select "Join as Spectator" to watch!
+            No spectators watching right now. Friends joining with code can select &quot;Join as Spectator&quot; to watch!
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -591,7 +588,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             ) : (
               <>
                 <Play className="w-5 h-5 text-white" />
-                <span>I'M READY TO PLAY! 👉</span>
+                <span>I&apos;M READY TO PLAY! 👉</span>
               </>
             )}
           </button>

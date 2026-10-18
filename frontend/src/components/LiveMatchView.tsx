@@ -562,6 +562,7 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
                       <button
                         key={num}
                         disabled={myLockedNumber !== null}
+                        aria-label={`Play hand number ${num}`}
                         onClick={() => {
                           soundEngine.playClick();
                           setManualChosenNumber(num);
@@ -617,7 +618,7 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
                       OPPONENT IS CHOOSING PRIVATELY
                     </h4>
                     <p className="text-xs text-[#FFF9E8] mt-1 max-w-xs font-medium">
-                      Opponent's video feed and secret number are completely shielded during the decision phase!
+                      Opponent&apos;s video feed and secret number are completely shielded during the decision phase!
                     </p>
                     <div className="mt-4 bg-[#111111] text-xs font-mono font-bold px-4 py-2 rounded-xl border border-white flex items-center gap-2 shadow-sm">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#FFD900] animate-ping" />

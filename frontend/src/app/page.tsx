@@ -151,7 +151,6 @@ export default function Home() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log(`WebSocket connected to room ${code} as ${role}`);
       if (role === "player") {
         setupWebRTC(host);
       }
@@ -160,7 +159,6 @@ export default function Home() {
     ws.onmessage = async (event) => {
       try {
         const msg = JSON.parse(event.data);
-        console.log("WS Received:", msg.type, msg);
 
         switch (msg.type) {
           case "INITIAL_STATE":
@@ -283,7 +281,7 @@ export default function Home() {
     };
 
     ws.onclose = () => {
-      console.log("WebSocket disconnected");
+      // Clean disconnect
     };
   };
 

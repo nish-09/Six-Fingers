@@ -123,7 +123,7 @@ export const WebcamEffectsModal: React.FC<WebcamEffectsModalProps> = ({
         <div className="bg-[#1C1C26] border-2 border-white/10 rounded-xl p-3 flex items-start gap-3">
           <Eye className="w-4 h-4 text-[#9BE52E] shrink-0 mt-0.5" />
           <p className="text-xs text-gray-400 leading-relaxed">
-            <strong className="text-white">Computer Vision Guarantee:</strong> Decorative filters only apply to your display video output and opponent's WebRTC screen. Raw video frames continue feeding into MediaPipe AI without interference so your hand cricket gestures register instantly.
+            <strong className="text-white">Computer Vision Guarantee:</strong> Decorative filters only apply to your display video output and opponent&apos;s WebRTC screen. Raw video frames continue feeding into MediaPipe AI without interference so your hand cricket gestures register instantly.
           </p>
         </div>
       </div>

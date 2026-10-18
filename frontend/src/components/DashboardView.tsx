@@ -143,14 +143,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Primary Battle Launcher & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section aria-labelledby="quick-play-heading" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Giant Quick Play Button */}
         <div className="lg:col-span-7 bg-[#FFD900] border-4 border-black shadow-[8px_8px_0px_#111] p-6 flex flex-col justify-between">
           <div>
-            <div className="inline-block bg-black text-[#9BE52E] text-xs font-black uppercase px-3 py-1 border-2 border-black mb-3">
-              PUBLIC MATCHMAKING QUEUE
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black font-display text-black uppercase tracking-tight leading-none">
+            <h2 id="quick-play-heading" className="text-3xl sm:text-4xl font-black font-display text-black uppercase tracking-tight leading-none">
               Quick Play Arena
             </h2>
             <p className="text-sm font-bold text-gray-800 mt-2 max-w-md">
@@ -181,7 +178,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Create Room Card */}
           <div className="bg-[#FFF9E8] border-4 border-black shadow-[6px_6px_0px_#111] p-5 flex items-center justify-between">
             <div>
-              <div className="text-xs font-black uppercase text-[#6500C8]">Host With Friends</div>
               <div className="text-xl font-black font-display">Create Private Room</div>
               <div className="text-xs font-bold text-gray-600 mt-0.5">Customize overs, wickets, & team roster</div>
             </div>
@@ -198,22 +194,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Join With Code */}
           <div className="bg-[#FFF9E8] border-4 border-black shadow-[6px_6px_0px_#111] p-5">
-            <div className="text-xs font-black uppercase text-[#6500C8] mb-1">Enter Existing Match</div>
-            <form onSubmit={handleJoinSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={inputCode}
-                onChange={(e) => setInputCode(e.target.value.toUpperCase())}
-                placeholder="6-CHAR CODE (e.g. 26PW7B)"
-                maxLength={8}
-                className="flex-1 px-3 py-2.5 bg-white border-3 border-black shadow-[2px_2px_0px_#111] font-mono font-black text-sm uppercase tracking-wider focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 bg-[#9BE52E] hover:bg-[#86c924] text-black border-3 border-black shadow-[2px_2px_0px_#111] font-display font-black text-sm uppercase"
-              >
-                Join
-              </button>
+            <form onSubmit={handleJoinSubmit} className="space-y-2">
+              <label htmlFor="dashboard-room-code" className="block text-xs font-black uppercase text-[#6500C8]">
+                Join Match With Code
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="dashboard-room-code"
+                  type="text"
+                  value={inputCode}
+                  onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                  placeholder="6-CHAR CODE (e.g. 26PW7B)"
+                  maxLength={8}
+                  className="flex-1 px-3 py-2.5 bg-white border-3 border-black shadow-[2px_2px_0px_#111] font-mono font-black text-sm uppercase tracking-wider focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-[#9BE52E] hover:bg-[#86c924] text-black border-3 border-black shadow-[2px_2px_0px_#111] font-display font-black text-sm uppercase"
+                >
+                  Join
+                </button>
+              </div>
             </form>
           </div>
 
@@ -227,7 +228,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="p-4 bg-white border-3 border-black shadow-[4px_4px_0px_#111] hover:bg-gray-50 flex items-center justify-between text-left transition-transform active:translate-x-0.5 active:translate-y-0.5"
             >
               <div>
-                <div className="text-[10px] font-black uppercase text-gray-500">Social Hub</div>
                 <div className="font-display font-black text-sm uppercase">Gaming Circle</div>
                 <div className="text-[10px] font-bold text-[#6500C8]">
                   {onlineFriendsCount > 0 ? `${onlineFriendsCount} Online` : "Manage Friends"}
@@ -244,7 +244,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="p-4 bg-white border-3 border-black shadow-[4px_4px_0px_#111] hover:bg-gray-50 flex items-center justify-between text-left transition-transform active:translate-x-0.5 active:translate-y-0.5"
             >
               <div>
-                <div className="text-[10px] font-black uppercase text-gray-500">Rankings</div>
                 <div className="font-display font-black text-sm uppercase">Leaderboard</div>
                 <div className="text-[10px] font-bold text-[#F000A8]">Global Records</div>
               </div>
@@ -262,7 +261,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="p-3.5 bg-[#FFF9E8] border-3 border-black shadow-[4px_4px_0px_#111] hover:bg-yellow-50 flex items-center justify-between text-left transition-transform active:translate-x-0.5 active:translate-y-0.5"
             >
               <div>
-                <div className="text-[10px] font-black uppercase text-gray-500">Multi-Match</div>
                 <div className="font-display font-black text-xs sm:text-sm uppercase text-[#6500C8]">Series Derby</div>
                 <div className="text-[10px] font-bold text-gray-600">Best of 3, 5, 7</div>
               </div>
@@ -277,7 +275,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="p-3.5 bg-[#FFF9E8] border-3 border-black shadow-[4px_4px_0px_#111] hover:bg-purple-50 flex items-center justify-between text-left transition-transform active:translate-x-0.5 active:translate-y-0.5"
             >
               <div>
-                <div className="text-[10px] font-black uppercase text-gray-500">Championship</div>
                 <div className="font-display font-black text-xs sm:text-sm uppercase text-[#F000A8]">Tournaments</div>
                 <div className="text-[10px] font-bold text-gray-600">Knockout Brackets</div>
               </div>
@@ -285,7 +282,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Verified Competitive Statistics Matrix */}
       <div>

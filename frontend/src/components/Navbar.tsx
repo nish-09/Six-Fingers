@@ -144,6 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="p-2 bg-[#FFF9E8] hover:bg-white text-black border-3 border-black rounded-xl shadow-brutal-sm flex items-center gap-1 transition-transform active:translate-x-0.5 active:translate-y-0.5"
               title="Friends & Rivals"
+              aria-label="Friends and Rivals"
             >
               <Users className="w-4 h-4 text-[#6500C8]" />
               <span className="hidden sm:inline text-xs font-black uppercase">Friends</span>
@@ -159,6 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="p-2 bg-[#FFF9E8] hover:bg-white text-black border-3 border-black rounded-xl shadow-brutal-sm flex items-center gap-1 transition-transform active:translate-x-0.5 active:translate-y-0.5"
               title="Hall of Fame"
+              aria-label="Hall of Fame Leaderboard"
             >
               <Trophy className="w-4 h-4 text-[#FFD900]" />
               <span className="hidden sm:inline text-xs font-black uppercase">Ranks</span>
@@ -174,6 +176,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="relative p-2 bg-[#FFF9E8] hover:bg-white text-black border-3 border-black rounded-xl shadow-brutal-sm transition-transform active:translate-x-0.5 active:translate-y-0.5"
               title="Notifications"
+              aria-label={`Notifications ${unreadNotificationsCount > 0 ? `(${unreadNotificationsCount} unread)` : ""}`}
             >
               <Bell className="w-4 h-4 text-[#6500C8]" />
               {unreadNotificationsCount > 0 && (
@@ -188,10 +191,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center bg-[#FFF9E8] border-3 border-[#111111] rounded-xl px-2 py-1 shadow-brutal-sm">
             <Globe className="w-4 h-4 text-[#6500C8] mr-1" />
             <select
+              id="commentary-lang-select"
               value={currentLang}
               onChange={handleLangChange}
               className="bg-transparent text-xs font-black text-[#111111] outline-none cursor-pointer"
               title="Commentary Language"
+              aria-label="Commentary Language"
             >
               <option value="en">EN</option>
               <option value="hi">HI</option>
@@ -207,6 +212,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               isMuted ? "bg-red-400 text-white" : "bg-[#9BE52E] text-[#111111]"
             }`}
             title={isMuted ? "Unmute Sound" : "Mute Sound"}
+            aria-label={isMuted ? "Unmute Game Audio" : "Mute Game Audio"}
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
@@ -217,6 +223,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 p-1 pl-2 pr-2.5 bg-[#FFF9E8] hover:bg-white border-3 border-black rounded-xl shadow-brutal-sm transition-transform active:translate-x-0.5 active:translate-y-0.5"
+                aria-expanded={showUserMenu}
+                aria-haspopup="menu"
+                aria-label={`Account menu for ${profile.gamer_tag}`}
               >
                 <AvatarIcon id={profile.avatar_url} size="sm" />
                 <span className="text-xs font-black text-black font-display truncate max-w-[100px] sm:max-w-[130px]">

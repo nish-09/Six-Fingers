@@ -79,22 +79,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           <StarSticker className="w-8 h-8 text-[#F000A8] animate-wiggle" />
         </div>
 
-        {/* BUBBLE BANNER "LET THE GAME BEGIN" */}
-        <div className="flex justify-center">
-          <GameBannerTitle title="LET THE GAME BEGIN" />
-        </div>
-
         {/* HERO TITLE */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h1 className="text-5xl sm:text-7xl md:text-8xl font-black font-display tracking-tight text-[#111111] uppercase drop-shadow-[5px_5px_0px_#F000A8]">
             SIX FINGERS
           </h1>
           <p className="text-xl sm:text-2xl font-black font-display text-[#6500C8] uppercase tracking-wide">
-            MULTIPLAYER TEAM CRICKET & SPECTATOR ARENA
+            MULTIPLAYER HAND CRICKET ARENA
           </p>
           <p className="text-sm sm:text-base font-bold text-gray-800 max-w-2xl mx-auto">
-            Play with your crew on opposing teams, rotate controllers each over, watch live as a spectator,
-            and enjoy hand cricket with live webcams, secret decision locking, and multilingual commentary!
+            Play real-time hand cricket with friends using webcams, computer-vision finger tracking,
+            secret simultaneous locking, and multilingual commentary.
           </p>
         </div>
 
@@ -160,10 +155,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           {activeTab === "create" ? (
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-xs font-black uppercase text-[#FFD900] mb-1">
-                  YOUR NAME / GAMER TAG:
+                <label htmlFor="host-name-input" className="block text-xs font-black uppercase text-[#FFD900] mb-1">
+                  Your Name / Gamer Tag:
                 </label>
                 <input
+                  id="host-name-input"
                   type="text"
                   required
                   value={hostName}
@@ -176,10 +172,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {/* Team Mode & Spectators Configuration */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-[#FFF9E8] mb-1">
-                    PLAYERS PER TEAM:
+                  <label htmlFor="players-per-team-select" className="block text-[11px] font-black uppercase text-[#FFF9E8] mb-1">
+                    Format:
                   </label>
                   <select
+                    id="players-per-team-select"
                     value={playersPerTeam}
                     onChange={(e) => setPlayersPerTeam(parseInt(e.target.value))}
                     className="w-full bg-[#FFF9E8] border-2 border-black text-[#111111] rounded-xl px-3 py-2 font-mono font-bold text-xs outline-none"
@@ -192,10 +189,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-[#FFF9E8] mb-1">
-                    MAX SPECTATORS:
+                  <label htmlFor="max-spectators-select" className="block text-[11px] font-black uppercase text-[#FFF9E8] mb-1">
+                    Max Spectators:
                   </label>
                   <select
+                    id="max-spectators-select"
                     value={maxSpectators}
                     onChange={(e) => setMaxSpectators(parseInt(e.target.value))}
                     className="w-full bg-[#FFF9E8] border-2 border-black text-[#111111] rounded-xl px-3 py-2 font-mono font-bold text-xs outline-none"
@@ -213,17 +211,18 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   className="btn-brutal-pink w-full py-4 rounded-xl text-lg flex items-center justify-center gap-2"
                 >
                   <Flame className="w-5 h-5" />
-                  <span>CREATE MATCH ROOM & GET CODE</span>
+                  <span>Create Match Room</span>
                 </button>
               </div>
             </form>
           ) : (
             <form onSubmit={handleJoin} className="space-y-4">
               <div>
-                <label className="block text-xs font-black uppercase text-[#9BE52E] mb-1">
-                  6-DIGIT ROOM CODE:
+                <label htmlFor="join-code-input" className="block text-xs font-black uppercase text-[#9BE52E] mb-1">
+                  6-Digit Room Code:
                 </label>
                 <input
+                  id="join-code-input"
                   type="text"
                   required
                   maxLength={6}
@@ -235,10 +234,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase text-[#9BE52E] mb-1">
-                  YOUR NAME:
+                <label htmlFor="join-name-input" className="block text-xs font-black uppercase text-[#9BE52E] mb-1">
+                  Your Name:
                 </label>
                 <input
+                  id="join-name-input"
                   type="text"
                   required
                   value={joinPlayerName}
@@ -250,9 +250,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* Role Selection: Player vs Spectator */}
               <div>
-                <label className="block text-xs font-black uppercase text-[#FFF9E8] mb-1.5">
-                  HOW WOULD YOU LIKE TO JOIN?
-                </label>
+                <span className="block text-xs font-black uppercase text-[#FFF9E8] mb-1.5">
+                  Join Role:
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -266,7 +266,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         : "bg-white/10 text-white hover:bg-white/20"
                     }`}
                   >
-                    <span>🏏 JOIN AS PLAYER</span>
+                    <span>🏏 Play Match</span>
                   </button>
                   <button
                     type="button"
@@ -280,13 +280,13 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         : "bg-white/10 text-white hover:bg-white/20"
                     }`}
                   >
-                    <span>👁️ JOIN AS SPECTATOR</span>
+                    <span>👁️ Spectate Only</span>
                   </button>
                 </div>
                 <p className="text-[11px] text-[#FFF9E8]/80 mt-1 font-mono">
                   {joinRole === "player"
-                    ? "👉 You will join a team, rotate over controls, and submit hand gestures."
-                    : "👉 You will watch the live scoreboard, discuss deliveries, and cheer!"}
+                    ? "👉 Play on the field, submit gestures, and score runs."
+                    : "👉 Watch live scoreboard, discuss deliveries, and cheer."}
                 </p>
               </div>
 
@@ -296,7 +296,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   className="btn-brutal-green w-full py-4 rounded-xl text-lg flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5" />
-                  <span>{joinRole === "player" ? "ENTER ROOM & START PLAYING" : "ENTER ROOM AS SPECTATOR"}</span>
+                  <span>{joinRole === "player" ? "Enter Room" : "Join as Spectator"}</span>
                 </button>
               </div>
             </form>
@@ -304,28 +304,20 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         </div>
       </div>
 
-      {/* 2. ARCADE FEATURE CARDS (Inspired by "Most Popular" cards in reference) */}
-      <div className="panel-brutal-purple p-6 sm:p-8">
+      {/* 2. ARCADE FEATURE CARDS */}
+      <section aria-labelledby="formats-heading" className="panel-brutal-purple p-6 sm:p-8">
         <div className="flex items-center justify-between mb-6 border-b-3 border-black pb-3">
-          <div className="flex items-center gap-2">
-            <span className="bg-[#FFD900] text-black text-xs font-black uppercase px-3 py-1 rounded-full border-2 border-black">
-              GAMEPLAY MODES
-            </span>
-            <h3 className="text-xl sm:text-2xl font-black font-display text-white uppercase">
-              POPULAR CRICKET FORMATS
-            </h3>
-          </div>
-          <span className="text-xs font-bold text-[#FFF9E8]">2-PLAYER PEER-TO-PEER</span>
+          <h2 id="formats-heading" className="text-xl sm:text-2xl font-black font-display text-white uppercase">
+            Popular Cricket Formats
+          </h2>
+          <span className="text-xs font-bold text-[#FFF9E8]">Real-Time Peer-to-Peer</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1 */}
           <div className="panel-brutal-white p-5 flex flex-col justify-between hover:translate-x-1 hover:translate-y-1 transition-transform">
             <div>
-              <span className="bg-[#FFD900] text-black text-[10px] font-black uppercase px-2 py-0.5 rounded border border-black mb-2 inline-block">
-                FAST BLITZ
-              </span>
-              <h4 className="text-2xl font-black font-display text-[#111111]">1-OVER DERBY</h4>
+              <h3 className="text-2xl font-black font-display text-[#111111]">1-OVER DERBY</h3>
               <p className="text-xs text-gray-700 font-medium mt-1">
                 6 deliveries each! Maximize your runs without showing matching fingers. Sudden death
                 intensity.
@@ -343,7 +335,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               <span className="bg-[#F000A8] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded border border-black mb-2 inline-block">
                 MOST POPULAR
               </span>
-              <h4 className="text-2xl font-black font-display text-[#111111]">CLASSIC 2-OVERS</h4>
+              <h3 className="text-2xl font-black font-display text-[#111111]">CLASSIC 2-OVERS</h3>
               <p className="text-xs text-gray-700 font-medium mt-1">
                 The authentic gully-cricket formula. 12 balls per side with bowler rotation and tactical
                 pacing.
@@ -358,10 +350,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           {/* Card 3 */}
           <div className="panel-brutal-white p-5 flex flex-col justify-between hover:translate-x-1 hover:translate-y-1 transition-transform">
             <div>
-              <span className="bg-[#9BE52E] text-black text-[10px] font-black uppercase px-2 py-0.5 rounded border border-black mb-2 inline-block">
-                CHAMPIONSHIP
-              </span>
-              <h4 className="text-2xl font-black font-display text-[#111111]">5-OVERS T20 DERBY</h4>
+              <h3 className="text-2xl font-black font-display text-[#111111]">5-OVERS T20 DERBY</h3>
               <p className="text-xs text-gray-700 font-medium mt-1">
                 Full batting lineup with 5 wickets. Build partnerships, pace the chase, and settle old
                 scores.
@@ -373,33 +362,33 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* 3. HOW TO PLAY SECTION */}
-      <div className="bg-[#FFF9E8] border-4 border-black rounded-2xl shadow-brutal p-6 sm:p-8">
+      <section aria-labelledby="how-it-works-heading" className="bg-[#FFF9E8] border-4 border-black rounded-2xl shadow-brutal p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6 border-b-3 border-black pb-3">
           <HelpCircle className="w-8 h-8 text-[#F000A8]" />
           <div>
-            <h3 className="text-2xl sm:text-3xl font-black font-display text-[#111111] uppercase">
-              HOW HAND CRICKET WORKS
-            </h3>
+            <h2 id="how-it-works-heading" className="text-2xl sm:text-3xl font-black font-display text-[#111111] uppercase">
+              How Hand Cricket Works
+            </h2>
             <p className="text-xs text-gray-600 font-bold">
               Traditional Indian school cricket rules powered by computer vision & fair play security
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white border-2 border-black rounded-xl p-4 shadow-brutal-sm">
             <span className="w-8 h-8 rounded-full bg-[#FFD900] border-2 border-black flex items-center justify-center font-display font-black text-sm mb-2">
               1
             </span>
-            <h5 className="font-display font-black text-sm uppercase text-[#111111]">
-              PRIVATE DECISION
-            </h5>
+            <h3 className="font-display font-black text-sm uppercase text-[#111111]">
+              Private Decision
+            </h3>
             <p className="text-xs text-gray-700 mt-1">
               During the 5-second countdown, both players point numbers (1 to 6) in front of their
-              webcam. The opponent's screen is completely hidden!
+              webcam. The opponent&apos;s screen is completely hidden!
             </p>
           </div>
 
@@ -407,11 +396,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span className="w-8 h-8 rounded-full bg-[#F000A8] text-white border-2 border-black flex items-center justify-center font-display font-black text-sm mb-2">
               2
             </span>
-            <h5 className="font-display font-black text-sm uppercase text-[#111111]">
-              SECRET LOCK
-            </h5>
+            <h3 className="font-display font-black text-sm uppercase text-[#111111]">
+              Secret Lock
+            </h3>
             <p className="text-xs text-gray-700 mt-1">
-              Your number is locked securely on the server. Neither player knows the other's choice until
+              Your number is locked securely on the server. Neither player knows the other&apos;s choice until
               both have locked.
             </p>
           </div>
@@ -420,9 +409,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span className="w-8 h-8 rounded-full bg-[#9BE52E] border-2 border-black flex items-center justify-center font-display font-black text-sm mb-2">
               3
             </span>
-            <h5 className="font-display font-black text-sm uppercase text-[#111111]">
-              SIMULTANEOUS REVEAL
-            </h5>
+            <h3 className="font-display font-black text-sm uppercase text-[#111111]">
+              Simultaneous Reveal
+            </h3>
             <p className="text-xs text-gray-700 mt-1">
               Both numbers pop up together! If numbers match = <b>WICKET (OUT!)</b>. If different ={" "}
               <b>BATSMAN SCORES RUNS</b>!
@@ -433,16 +422,16 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span className="w-8 h-8 rounded-full bg-[#6500C8] text-white border-2 border-black flex items-center justify-center font-display font-black text-sm mb-2">
               4
             </span>
-            <h5 className="font-display font-black text-sm uppercase text-[#111111]">
-              DISCUSS & READY UP
-            </h5>
+            <h3 className="font-display font-black text-sm uppercase text-[#111111]">
+              Discuss & Ready Up
+            </h3>
             <p className="text-xs text-gray-700 mt-1">
-              Webcams reconnect! Talk, laugh, banter, and click "Ready for next ball" when prepared for
+              Webcams reconnect! Talk, laugh, banter, and click &quot;Ready for next ball&quot; when prepared for
               the next delivery.
             </p>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
