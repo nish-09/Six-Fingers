@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import uuid
 import time
@@ -21,7 +22,16 @@ from .models.game import (
 from .rooms.manager import room_manager
 from .engine.hand_cricket import HandCricketEngine
 from .commentary.service import commentary_service
-from .database import init_db, save_completed_match, get_match_history, get_match_detail, check_db_health, User
+from .database import (
+    init_db,
+    save_completed_match,
+    get_match_history,
+    get_match_detail,
+    check_db_health,
+    get_safe_database_description,
+    DATABASE_URL,
+    User
+)
 from .auth.security import get_optional_current_user
 from .auth.router import router as auth_router
 from .routers.profiles import router as profiles_router
@@ -49,7 +59,21 @@ async def periodic_room_cleanup():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    print("[Lifespan] Starting up Six Fingers backend...", flush=True)
+    try:
+        await init_db()
+        print("[Lifespan] Database initialization complete.", flush=True)
+    except Exception as exc:
+        print(
+            f"[Lifespan Fatal] Application startup aborted: Database initialization failed "
+            f"({type(exc).__name__}: {exc}). Target: {get_safe_database_description(DATABASE_URL)}",
+            file=sys.stderr,
+            flush=True
+        )
+        sys.stderr.flush()
+        sys.stdout.flush()
+        raise exc
+
     cleanup_task = asyncio.create_task(periodic_room_cleanup())
     yield
     cleanup_task.cancel()

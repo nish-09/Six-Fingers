@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import time
 import asyncio
@@ -6,6 +7,18 @@ from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Float, Boolean, Text, select, desc, or_, and_, text, inspect
+from sqlalchemy.engine import make_url
+
+def get_safe_database_description(url_str: str) -> str:
+    """Returns a masked database description safe for logging, hiding passwords."""
+    try:
+        u = make_url(url_str)
+        return u.render_as_string(hide_password=True)
+    except Exception:
+        if "@" in url_str:
+            prefix, rest = url_str.split("@", 1)
+            return f"...@{rest}"
+        return "database"
 
 def configure_database(
     raw_url: Optional[str] = None,
@@ -19,12 +32,16 @@ def configure_database(
     - Supabase Transaction Pooling (PgBouncer/Supavisor, port 6543)
     - Supabase Session Pooling (port 5432)
     - Local development SQLite fallback
+
+    Critically strips libpq query parameters like `sslmode` and `channel_binding`
+    that cause asyncpg to raise `TypeError: connect() got an unexpected keyword argument`.
     """
     env = (environment or os.getenv("ENVIRONMENT", os.getenv("NODE_ENV", "development"))).lower()
     url = raw_url if raw_url is not None else os.getenv("DATABASE_URL")
+    is_render = os.getenv("RENDER", "").lower() in ("true", "1")
 
-    # Production safety check: enforce PostgreSQL in production
-    if env == "production":
+    # Production / Render safety check: enforce PostgreSQL
+    if env == "production" or (environment is None and is_render):
         if not url:
             raise RuntimeError(
                 "DATABASE_URL is not configured. Production environment requires a valid "
@@ -40,13 +57,21 @@ def configure_database(
     if not url:
         url = "sqlite+aiosqlite:///./hand_cricket.db"
 
-    clean_url = url.strip()
+    clean_url = url.strip().strip("'\"").strip()
+
+    if "[YOUR-PASSWORD]" in clean_url or "<password>" in clean_url.lower():
+        raise RuntimeError(
+            "DATABASE_URL contains the template placeholder '[YOUR-PASSWORD]'. "
+            "Please replace it with your actual Supabase database password in Render environment variables."
+        )
 
     # Normalize driver prefixes for SQLAlchemy 2.0 + asyncpg
     if clean_url.startswith("sqlite:///") and not clean_url.startswith("sqlite+aiosqlite:///"):
         clean_url = clean_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
     elif clean_url.startswith("postgres://"):
         clean_url = clean_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif clean_url.startswith("postgres+asyncpg://"):
+        clean_url = clean_url.replace("postgres+asyncpg://", "postgresql+asyncpg://", 1)
     elif clean_url.startswith("postgresql://") and not clean_url.startswith("postgresql+asyncpg://"):
         clean_url = clean_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif clean_url.startswith("postgresql+psycopg2://"):
@@ -70,11 +95,68 @@ def configure_database(
             "statement_cache_size": 0,
         }
 
-        # Handle SSL for remote Supabase connections
-        # If connecting to supabase.co or pooler.supabase.com, enforce SSL if not in URL
+        # Parse URL and strip libpq query parameters that cause asyncpg to crash
         is_supabase_host = "supabase.co" in clean_url or "pooler.supabase.com" in clean_url
         force_ssl = os.getenv("DB_SSL", "true").lower() in ("true", "1", "yes")
-        if (is_supabase_host or force_ssl) and "ssl=" not in clean_url and "sslmode=" not in clean_url:
+        wants_ssl = True
+
+        try:
+            sa_url = make_url(clean_url)
+            query_dict = dict(sa_url.query)
+            sslmode_val = query_dict.pop("sslmode", None)
+            ssl_val = query_dict.pop("ssl", None)
+
+            # Strip known libpq / pooler parameters that asyncpg does not accept as kwargs
+            query_dict.pop("channel_binding", None)
+            query_dict.pop("pgbouncer", None)
+            query_dict.pop("gssencmode", None)
+
+            # Only retain params that asyncpg.connect natively accepts as kwargs
+            recognized_asyncpg_params = {
+                "command_timeout", "timeout", "server_settings"
+            }
+            clean_query = {k: v for k, v in query_dict.items() if k in recognized_asyncpg_params}
+
+            if sslmode_val in ("disable", "none", "off") or ssl_val in ("disable", "false", "0"):
+                wants_ssl = False
+            elif is_supabase_host or force_ssl or sslmode_val or ssl_val:
+                wants_ssl = True
+
+            clean_url = sa_url.set(drivername="postgresql+asyncpg", query=clean_query).render_as_string(hide_password=False)
+
+            # Check for direct Supabase host vs pooler host and log helpful diagnostics
+            host = sa_url.host or ""
+            if "supabase.co" in host and host.startswith("db."):
+                print(
+                    "[Database Config Notice] Direct Supabase host detected ('db.*.supabase.co'). "
+                    "Supabase direct connections are IPv6-only on the free tier. Render does not support "
+                    "outbound IPv6 on standard services. If connection times out or fails, switch your "
+                    "DATABASE_URL in Render to the Supabase Connection Pooler: "
+                    "aws-0-<region>.pooler.supabase.com:6543 with username 'postgres.<project-ref>'.",
+                    file=sys.stderr,
+                    flush=True
+                )
+            elif "pooler.supabase.com" in host:
+                user = sa_url.username or ""
+                if user == "postgres":
+                    print(
+                        "[Database Config Notice] Supabase Pooler host detected ('pooler.supabase.com'), but the "
+                        "username is 'postgres' without a project reference. The Supabase connection pooler "
+                        "requires the username format 'postgres.<project-ref>'. If connection fails with "
+                        "'(ENOIDENTIFIER) no tenant identifier', update your DATABASE_URL in Render.",
+                        file=sys.stderr,
+                        flush=True
+                    )
+        except Exception:
+            # Fallback string stripping if make_url encounters special syntax
+            import re
+            clean_url = re.sub(r"[?&]sslmode=[^&]+", "", clean_url)
+            clean_url = re.sub(r"[?&]channel_binding=[^&]+", "", clean_url)
+            clean_url = re.sub(r"[?&]pgbouncer=[^&]+", "", clean_url)
+            if "?" not in clean_url and "&" in clean_url:
+                clean_url = clean_url.replace("&", "?", 1)
+
+        if wants_ssl:
             connect_args["ssl"] = "require"
 
         pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
@@ -316,13 +398,73 @@ def _migrate_match_records_columns(sync_conn):
         if "tournament_id" not in existing_cols:
             sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN tournament_id VARCHAR(64)"))
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def init_db(max_retries: int = 3, retry_delay: float = 2.0):
+    """
+    Initializes database schema with retry resilience for cold-starts and connection handshakes.
+    Logs masked diagnostic progress to assist with cloud deployment troubleshooting.
+    """
+    safe_db = get_safe_database_description(DATABASE_URL)
+    print(f"[Database] Initializing connection to {safe_db}...", flush=True)
+
+    last_err: Optional[Exception] = None
+    for attempt in range(1, max_retries + 1):
         try:
-            await conn.run_sync(_migrate_match_records_columns)
-        except Exception as e:
-            print(f"[Schema Migration Warning] {e}")
+            if attempt > 1:
+                print(f"[Database] Connection retry attempt {attempt}/{max_retries}...", flush=True)
+
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                try:
+                    await conn.run_sync(_migrate_match_records_columns)
+                except Exception as e:
+                    print(f"[Database Schema Warning] {e}", flush=True)
+
+            print(f"[Database] Successfully connected and database schema verified.", flush=True)
+            return
+        except Exception as exc:
+            last_err = exc
+            print(
+                f"[Database Connection Error] Attempt {attempt}/{max_retries} failed: "
+                f"{type(exc).__name__}: {exc}",
+                file=sys.stderr,
+                flush=True
+            )
+            if attempt < max_retries:
+                await asyncio.sleep(retry_delay)
+
+    # All retries failed - provide helpful diagnostic guidance without exposing credentials
+    print(
+        f"[Database Fatal] Unable to establish connection to database after {max_retries} attempts.",
+        file=sys.stderr,
+        flush=True
+    )
+    err_str = str(last_err)
+    if "ENOIDENTIFIER" in err_str:
+        print(
+            "[Database Fatal Tip] Supabase pooler rejected connection: '(ENOIDENTIFIER) no tenant identifier provided'. "
+            "When connecting to 'pooler.supabase.com:6543', your username in DATABASE_URL MUST be 'postgres.<project-ref>', not just 'postgres'.",
+            file=sys.stderr,
+            flush=True
+        )
+    elif "getaddrinfo" in err_str or "Network is unreachable" in err_str or "101" in err_str:
+        print(
+            "[Database Fatal Tip] Network unreachable: Supabase direct connections ('db.<project-ref>.supabase.co') are "
+            "IPv6-only on the free tier. Render web services do not support outbound IPv6. "
+            "Use the Supabase Connection Pooler ('aws-0-<region>.pooler.supabase.com:6543') which supports dual-stack IPv4.",
+            file=sys.stderr,
+            flush=True
+        )
+    elif "password authentication failed" in err_str.lower():
+        print(
+            "[Database Fatal Tip] Password authentication failed. Please verify the database password in your Render DATABASE_URL.",
+            file=sys.stderr,
+            flush=True
+        )
+
+    sys.stderr.flush()
+    sys.stdout.flush()
+    if last_err:
+        raise last_err
 
 async def check_db_health() -> bool:
     try:

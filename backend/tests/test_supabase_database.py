@@ -43,6 +43,35 @@ def test_database_url_normalization_psycopg2_prefix():
     assert clean_url.startswith("postgresql+asyncpg://")
     assert kwargs["connect_args"]["statement_cache_size"] == 0
 
+def test_database_url_strips_sslmode_and_channel_binding():
+    """Verify query parameters that crash asyncpg (sslmode, channel_binding) are cleanly stripped."""
+    url = "postgresql://postgres:pass@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&channel_binding=prefer"
+    clean_url, kwargs = configure_database(url, environment="production")
+    assert clean_url == "postgresql+asyncpg://postgres:pass@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+    assert kwargs["connect_args"]["ssl"] == "require"
+    assert kwargs["connect_args"]["statement_cache_size"] == 0
+
+def test_database_url_strips_surrounding_quotes_and_whitespace():
+    """Verify surrounding quotes and whitespace from environment configs are stripped."""
+    url = '  "postgresql://postgres:pass@aws-0-us-east-1.pooler.supabase.com:6543/postgres"  '
+    clean_url, kwargs = configure_database(url, environment="production")
+    assert clean_url.startswith("postgresql+asyncpg://")
+
+def test_database_url_detects_unsubstituted_password_placeholder():
+    """Verify copying template placeholder [YOUR-PASSWORD] raises an immediate clear error."""
+    url = "postgresql://postgres:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+    with pytest.raises(RuntimeError, match="template placeholder '\\[YOUR-PASSWORD\\]'"):
+        configure_database(url, environment="production")
+
+def test_safe_database_description_masks_credentials():
+    """Verify passwords are redacted when logging database connection targets."""
+    from app.database import get_safe_database_description
+    url = "postgresql://postgres.myref:super_secret_pass@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+    safe = get_safe_database_description(url)
+    assert "super_secret_pass" not in safe
+    assert "postgres.myref" in safe
+    assert "aws-0-us-east-1.pooler.supabase.com" in safe
+
 def test_production_sqlite_rejection():
     """Verify production startup strictly forbids SQLite database fallback."""
     with pytest.raises(RuntimeError, match="SQLite URL.*is not permitted in production"):
