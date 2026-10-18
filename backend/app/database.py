@@ -1,27 +1,102 @@
 import os
 import json
 import time
-from typing import List, Optional, Dict, Any
+import asyncio
+from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, Float, Boolean, Text, select, desc, or_, and_, text
+from sqlalchemy import String, Integer, Float, Boolean, Text, select, desc, or_, and_, text, inspect
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./hand_cricket.db")
+def configure_database(
+    raw_url: Optional[str] = None,
+    environment: Optional[str] = None
+) -> Tuple[str, Dict[str, Any]]:
+    """
+    Validates and normalizes database configuration for SQLite and Supabase PostgreSQL.
 
-# Normalize postgres:// to postgresql+asyncpg:// if provided in env
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+asyncpg://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    Supports:
+    - Direct connections (port 5432)
+    - Supabase Transaction Pooling (PgBouncer/Supavisor, port 6543)
+    - Supabase Session Pooling (port 5432)
+    - Local development SQLite fallback
+    """
+    env = (environment or os.getenv("ENVIRONMENT", os.getenv("NODE_ENV", "development"))).lower()
+    url = raw_url if raw_url is not None else os.getenv("DATABASE_URL")
 
-engine_kwargs = {"echo": False}
-if "sqlite" in DATABASE_URL:
-    engine_kwargs["connect_args"] = {"check_same_thread": False}
-else:
-    engine_kwargs["pool_size"] = 10
-    engine_kwargs["max_overflow"] = 20
-    engine_kwargs["pool_pre_ping"] = True
+    # Production safety check: enforce PostgreSQL in production
+    if env == "production":
+        if not url:
+            raise RuntimeError(
+                "DATABASE_URL is not configured. Production environment requires a valid "
+                "Supabase PostgreSQL connection string."
+            )
+        if "sqlite" in url.lower():
+            raise RuntimeError(
+                f"Production environment requires a PostgreSQL connection string (Supabase). "
+                f"SQLite URL '{url}' is not permitted in production."
+            )
 
+    # Default to async SQLite for local development if not specified
+    if not url:
+        url = "sqlite+aiosqlite:///./hand_cricket.db"
+
+    clean_url = url.strip()
+
+    # Normalize driver prefixes for SQLAlchemy 2.0 + asyncpg
+    if clean_url.startswith("sqlite:///") and not clean_url.startswith("sqlite+aiosqlite:///"):
+        clean_url = clean_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+    elif clean_url.startswith("postgres://"):
+        clean_url = clean_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif clean_url.startswith("postgresql://") and not clean_url.startswith("postgresql+asyncpg://"):
+        clean_url = clean_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif clean_url.startswith("postgresql+psycopg2://"):
+        clean_url = clean_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    elif clean_url.startswith("postgresql+psycopg://"):
+        clean_url = clean_url.replace("postgresql+psycopg://", "postgresql+asyncpg://", 1)
+
+    is_sqlite = "sqlite" in clean_url.lower()
+
+    if is_sqlite:
+        from sqlalchemy.pool import NullPool
+        engine_kwargs: Dict[str, Any] = {
+            "echo": False,
+            "poolclass": NullPool,
+            "connect_args": {"check_same_thread": False}
+        }
+    else:
+        # PostgreSQL / Supabase configuration
+        connect_args: Dict[str, Any] = {
+            # Disable asyncpg prepared statement caching.
+            # CRITICAL for Supabase PgBouncer / Supavisor transaction pooler (port 6543)
+            # and prevents statement collisions across pooled connections.
+            "statement_cache_size": 0,
+        }
+
+        # Handle SSL for remote Supabase connections
+        # If connecting to supabase.co or pooler.supabase.com, enforce SSL if not in URL
+        is_supabase_host = "supabase.co" in clean_url or "pooler.supabase.com" in clean_url
+        force_ssl = os.getenv("DB_SSL", "true").lower() in ("true", "1", "yes")
+        if (is_supabase_host or force_ssl) and "ssl=" not in clean_url and "sslmode=" not in clean_url:
+            connect_args["ssl"] = "require"
+
+        pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
+        max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+        pool_recycle = int(os.getenv("DB_POOL_RECYCLE", "300"))
+        pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+
+        engine_kwargs = {
+            "echo": False,
+            "pool_size": pool_size,
+            "max_overflow": max_overflow,
+            "pool_pre_ping": True,
+            "pool_recycle": pool_recycle,
+            "pool_timeout": pool_timeout,
+            "connect_args": connect_args,
+        }
+
+    return clean_url, engine_kwargs
+
+DATABASE_URL, engine_kwargs = configure_database()
 engine = create_async_engine(DATABASE_URL, **engine_kwargs)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
@@ -227,31 +302,34 @@ class TournamentFixture(Base):
     next_fixture_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
 
+def _migrate_match_records_columns(sync_conn):
+    insp = inspect(sync_conn)
+    table_names = insp.get_table_names()
+    if "match_records" in table_names:
+        existing_cols = {c["name"] for c in insp.get_columns("match_records")}
+        if "match_type" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN match_type VARCHAR(20) DEFAULT 'PRIVATE'"))
+        if "player_1_user_id" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN player_1_user_id VARCHAR(64)"))
+        if "player_2_user_id" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN player_2_user_id VARCHAR(64)"))
+        if "series_id" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN series_id VARCHAR(64)"))
+        if "tournament_id" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN tournament_id VARCHAR(64)"))
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
-        # Safe migration for sqlite if columns don't exist yet
         try:
-            result = await conn.execute(text("PRAGMA table_info(match_records)"))
-            existing_cols = {row[1] for row in result.fetchall()}
-            if "match_type" not in existing_cols:
-                await conn.execute(text("ALTER TABLE match_records ADD COLUMN match_type VARCHAR(20) DEFAULT 'PRIVATE'"))
-            if "player_1_user_id" not in existing_cols:
-                await conn.execute(text("ALTER TABLE match_records ADD COLUMN player_1_user_id VARCHAR(64)"))
-            if "player_2_user_id" not in existing_cols:
-                await conn.execute(text("ALTER TABLE match_records ADD COLUMN player_2_user_id VARCHAR(64)"))
-            if "series_id" not in existing_cols:
-                await conn.execute(text("ALTER TABLE match_records ADD COLUMN series_id VARCHAR(64)"))
-            if "tournament_id" not in existing_cols:
-                await conn.execute(text("ALTER TABLE match_records ADD COLUMN tournament_id VARCHAR(64)"))
+            await conn.run_sync(_migrate_match_records_columns)
         except Exception as e:
-            print(f"[Migration Warning] {e}")
+            print(f"[Schema Migration Warning] {e}")
 
 async def check_db_health() -> bool:
     try:
         async with AsyncSessionLocal() as session:
-            await session.execute(text("SELECT 1"))
+            await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=5.0)
             return True
     except Exception:
         return False
