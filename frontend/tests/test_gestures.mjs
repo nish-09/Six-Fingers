@@ -1,6 +1,6 @@
 // Automated Landmark Gesture Tests for Hand Cricket Numbers 1 to 6
 
-import { HandCricketGestureRecognizer } from "../src/lib/vision/gestureRecognizer.js";
+import { HandCricketGestureRecognizer } from "../src/lib/vision/gestureRecognizer.ts";
 import assert from "node:assert";
 
 console.log("Running Hand Cricket Gesture Recognizer tests...");

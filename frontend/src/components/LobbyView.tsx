@@ -28,6 +28,7 @@ interface LobbyViewProps {
   onUpdateRotation?: (teamId: string, battingOrder: string[], bowlingOrder: string[]) => void;
   onLeaveRoom: () => void;
   onOpenChat?: () => void;
+  onInviteFriends?: () => void;
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({
@@ -43,6 +44,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   onUpdateRotation,
   onLeaveRoom,
   onOpenChat,
+  onInviteFriends,
 }) => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -122,6 +124,19 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             {copiedLink ? <Check className="w-4 h-4 text-white" /> : <Sparkles className="w-4 h-4" />}
             <span>{copiedLink ? "COPIED LINK!" : "COPY INVITE LINK"}</span>
           </button>
+
+          {onInviteFriends && (
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                onInviteFriends();
+              }}
+              className="btn-brutal-green px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5"
+            >
+              <Users className="w-4 h-4" />
+              <span>INVITE FRIENDS</span>
+            </button>
+          )}
 
           {onOpenChat && (
             <button

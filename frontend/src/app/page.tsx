@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { LandingHero } from "@/components/LandingHero";
+import { DashboardView } from "@/components/DashboardView";
 import { LobbyView } from "@/components/LobbyView";
 import { LiveMatchView } from "@/components/LiveMatchView";
 import { TossModal } from "@/components/TossModal";
@@ -10,10 +11,22 @@ import { MatchResultView } from "@/components/MatchResultView";
 import { DetailedScorecardModal } from "@/components/DetailedScorecardModal";
 import { MatchHistoryModal } from "@/components/MatchHistoryModal";
 import { SettingsModal } from "@/components/SettingsModal";
+import { AuthModal } from "@/components/AuthModal";
+import { MatchmakingModal } from "@/components/MatchmakingModal";
+import { FriendsModal } from "@/components/FriendsModal";
+import { ProfileModal } from "@/components/ProfileModal";
+import { PublicProfileModal } from "@/components/PublicProfileModal";
+import { LeaderboardModal } from "@/components/LeaderboardModal";
+import { NotificationDrawer } from "@/components/NotificationDrawer";
 import { WebRTCManager } from "@/lib/webrtc";
 import { getApiBaseUrl, getWsEndpoint } from "@/lib/config";
+import { useAuth } from "@/lib/authContext";
+import { usePresence } from "@/lib/presenceContext";
 
 export default function Home() {
+  const { user, profile, token, isAuthenticated } = useAuth();
+  const { presences } = usePresence();
+
   // App views: "landing" | "lobby" | "match"
   const [view, setView] = useState<"landing" | "lobby" | "match">("landing");
 
@@ -35,6 +48,18 @@ export default function Home() {
   const [showDetailedScorecard, setShowDetailedScorecard] = useState<boolean>(false);
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [authModalTab, setAuthModalTab] = useState<"signin" | "register">("signin");
+  const [showMatchmakingModal, setShowMatchmakingModal] = useState<boolean>(false);
+  const [showFriendsModal, setShowFriendsModal] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState<boolean>(false);
+  const [showNotificationsDrawer, setShowNotificationsDrawer] = useState<boolean>(false);
+  const [selectedPublicProfileGamerTag, setSelectedPublicProfileGamerTag] = useState<string | null>(null);
+  const [selectedMatchDetail, setSelectedMatchDetail] = useState<any | null>(null);
+
+  // Notifications count
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
 
   // Media & WebRTC
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -42,6 +67,27 @@ export default function Home() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const webrtcRef = useRef<WebRTCManager | null>(null);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (token) {
+      const loadUnread = async () => {
+        try {
+          const res = await fetch(`${getApiBaseUrl()}/api/invitations/notifications?limit=5`, {
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include",
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUnreadNotifications(data.unread_count || 0);
+          }
+        } catch (err) {
+          console.warn("Error fetching notification count:", err);
+        }
+      };
+      loadUnread();
+    }
+  }, [token, showNotificationsDrawer]);
 
   // Handle invitation link on load
   useEffect(() => {
@@ -91,11 +137,11 @@ export default function Home() {
   const connectWebSocket = (
     code: string,
     pId: string,
-    token: string,
+    tok: string,
     host: boolean,
     role: "player" | "spectator"
   ) => {
-    const fullWsUrl = getWsEndpoint(code, pId, token, role);
+    const fullWsUrl = getWsEndpoint(code, pId, tok, role);
 
     const ws = new WebSocket(fullWsUrl);
     wsRef.current = ws;
@@ -128,7 +174,6 @@ export default function Home() {
 
           case "PLAYER_CONNECTED":
             if (msg.state) setGameState(msg.state);
-            // If we are host and a player just connected, initiate WebRTC offer
             if (isHost && role === "player" && webrtcRef.current) {
               const offer = await webrtcRef.current.createOffer();
               if (offer && ws.readyState === WebSocket.OPEN) {
@@ -154,60 +199,34 @@ export default function Home() {
             }
             break;
 
-          case "TOSS_RESULT":
-            setGameState((prev: any) => ({
-              ...prev,
-              toss_winner_id: msg.toss_winner_id,
-            }));
-            break;
-
-          case "MATCH_STARTED":
-            if (msg.state) {
-              setGameState(msg.state);
-              setView("match");
-              setMyLockedNumber(null);
-              setOpponentLocked(false);
-              setLatestRevealResult(null);
-            }
-            break;
-
-          case "SECRET_LOCKED":
-            setMyLockedNumber(msg.chosen_number);
-            break;
-
           case "OPPONENT_LOCKED":
-          case "CONTROLLER_LOCKED":
             setOpponentLocked(true);
             break;
 
-          case "SIMULTANEOUS_REVEAL":
-            setLatestRevealResult(msg.delivery_result);
+          case "MATCH_STARTED":
+            if (msg.state) setGameState(msg.state);
+            setView("match");
+            setMyLockedNumber(null);
+            setOpponentLocked(false);
+            break;
+
+          case "DELIVERY_REVEAL":
+            setLatestRevealResult(msg.result);
             if (msg.state) setGameState(msg.state);
             break;
 
-          case "OVER_TRANSITION_READY":
-            if (msg.state) setGameState(msg.state);
-            break;
-
-          case "CHAT_MESSAGE":
+          case "CHAT_BROADCAST":
             if (msg.message) {
               setChatMessages((prev) => [...prev, msg.message]);
             }
             break;
 
-          case "REMATCH_STARTED":
-            if (msg.state) {
-              setGameState(msg.state);
-              setMyLockedNumber(null);
-              setOpponentLocked(false);
-              setLatestRevealResult(null);
-              setView("match");
-            }
+          case "TOSS_RESULT":
+            if (msg.state) setGameState(msg.state);
             break;
 
-          // WebRTC Signaling
           case "RTC_OFFER":
-            if (webrtcRef.current && msg.payload) {
+            if (webrtcRef.current && role === "player") {
               const answer = await webrtcRef.current.handleOffer(msg.payload);
               if (answer && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: "RTC_ANSWER", payload: answer }));
@@ -216,24 +235,46 @@ export default function Home() {
             break;
 
           case "RTC_ANSWER":
-            if (webrtcRef.current && msg.payload) {
+            if (webrtcRef.current && role === "player") {
               await webrtcRef.current.handleAnswer(msg.payload);
             }
             break;
 
           case "RTC_ICE_CANDIDATE":
-            if (webrtcRef.current && msg.payload) {
+            if (webrtcRef.current && role === "player") {
               await webrtcRef.current.handleIceCandidate(msg.payload);
             }
             break;
 
-          case "SUBMISSION_ERROR":
-            alert(msg.message);
+          case "MEDIA_STATUS_UPDATE":
+            break;
+
+          case "REMATCH_STARTED":
+            if (msg.state) setGameState(msg.state);
+            setView("match");
+            setMyLockedNumber(null);
+            setOpponentLocked(false);
+            setLatestRevealResult(null);
+            break;
+
+          case "PLAYER_DISCONNECTED":
+            if (msg.state) setGameState(msg.state);
+            break;
+
+          case "ERROR":
+            alert(msg.message || "An error occurred");
+            break;
+
+          default:
             break;
         }
       } catch (err) {
-        console.error("Error processing WebSocket message:", err);
+        console.warn("WS dispatch error:", err);
       }
+    };
+
+    ws.onerror = (err) => {
+      console.warn("WebSocket error:", err);
     };
 
     ws.onclose = () => {
@@ -248,15 +289,20 @@ export default function Home() {
   ) => {
     try {
       const apiUrl = getApiBaseUrl();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const res = await fetch(`${apiUrl}/api/rooms/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
+        credentials: "include",
         body: JSON.stringify({
-          host_name: hostName,
+          host_name: hostName || profile?.display_name || user?.full_name || "Player 1",
           players_per_team: config?.playersPerTeam ?? 1,
           max_spectators: config?.maxSpectators ?? 20,
         }),
       });
+
       if (!res.ok) throw new Error("Failed to create match room");
       const data = await res.json();
       setRoomCode(data.room_code);
@@ -279,12 +325,16 @@ export default function Home() {
   ) => {
     try {
       const apiUrl = getApiBaseUrl();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const res = await fetch(`${apiUrl}/api/rooms/join`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
+        credentials: "include",
         body: JSON.stringify({
           room_code: code,
-          player_name: playerName,
+          player_name: playerName || profile?.display_name || user?.full_name || "Player",
           role: role,
           team_id: teamId,
         }),
@@ -303,6 +353,61 @@ export default function Home() {
       connectWebSocket(data.room_code, data.player_id, data.session_token, false, actualRole);
     } catch (err: any) {
       alert("Error joining room: " + err.message);
+    }
+  };
+
+  // 3. Quick Play Launch
+  const handleStartQuickPlay = () => {
+    if (!isAuthenticated) {
+      setAuthModalTab("register");
+      setShowAuthModal(true);
+      return;
+    }
+    setShowMatchmakingModal(true);
+  };
+
+  // 4. Matchmaking Result Handler
+  const handleMatchFound = (
+    rCode: string,
+    pId: string,
+    sToken: string,
+    role: string,
+    tId: string
+  ) => {
+    setShowMatchmakingModal(false);
+    setRoomCode(rCode);
+    setPlayerId(pId);
+    setSessionToken(sToken);
+    const host = role === "host";
+    setIsHost(host);
+    setUserRole("player");
+    connectWebSocket(rCode, pId, sToken, host, "player");
+  };
+
+  // 5. Send Friend Invitation from Room
+  const handleSendRoomInvitation = async (recipientUserId: string) => {
+    if (!roomCode || !token) return;
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/invitations/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          recipient_user_id: recipientUserId,
+          room_code: roomCode,
+        }),
+      });
+      if (res.ok) {
+        alert("Invitation sent successfully!");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.detail || "Failed to send invitation");
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
     }
   };
 
@@ -443,7 +548,7 @@ export default function Home() {
     }
   };
 
-  // Leave Room
+  // Leave Room Action
   const handleLeaveRoom = () => {
     if (wsRef.current) wsRef.current.close();
     if (webrtcRef.current) webrtcRef.current.cleanup();
@@ -456,6 +561,20 @@ export default function Home() {
     setChatMessages([]);
   };
 
+  // View Match Scorecard Detail
+  const handleViewMatchDetail = async (matchId: string) => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/matches/${matchId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedMatchDetail(data.match);
+        setShowDetailedScorecard(true);
+      }
+    } catch (err) {
+      console.warn("Error fetching match detail:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-between selection:bg-[#F000A8] selection:text-white">
       {/* 1. Global Neo-brutalist Header */}
@@ -465,12 +584,45 @@ export default function Home() {
         userRole={userRole}
         onOpenHistory={() => setShowHistory(true)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenAuth={(tab) => {
+          setAuthModalTab(tab || "signin");
+          setShowAuthModal(true);
+        }}
+        onOpenFriends={() => setShowFriendsModal(true)}
+        onOpenProfile={() => setShowProfileModal(true)}
+        onOpenLeaderboard={() => setShowLeaderboardModal(true)}
+        onOpenNotifications={() => setShowNotificationsDrawer(true)}
+        onStartQuickPlay={handleStartQuickPlay}
+        unreadNotificationsCount={unreadNotifications}
       />
 
       {/* 2. Main Body View Routing */}
       <main className="flex-1 p-3 sm:p-6">
         {view === "landing" && (
-          <LandingHero onCreateMatch={handleCreateMatch} onJoinMatch={handleJoinMatch} />
+          <>
+            {isAuthenticated ? (
+              <DashboardView
+                onStartQuickPlay={handleStartQuickPlay}
+                onCreatePrivateRoom={() => handleCreateMatch(profile?.display_name || "Player 1")}
+                onJoinRoomCode={(code) => handleJoinMatch(code, profile?.display_name || "Player")}
+                onOpenFriends={() => setShowFriendsModal(true)}
+                onOpenLeaderboard={() => setShowLeaderboardModal(true)}
+                onOpenProfile={() => setShowProfileModal(true)}
+                onOpenHistory={() => setShowHistory(true)}
+                onViewMatchDetail={handleViewMatchDetail}
+              />
+            ) : (
+              <LandingHero
+                onCreateMatch={handleCreateMatch}
+                onJoinMatch={handleJoinMatch}
+                onOpenAuth={(tab) => {
+                  setAuthModalTab(tab || "register");
+                  setShowAuthModal(true);
+                }}
+                onStartQuickPlay={handleStartQuickPlay}
+              />
+            )}
+          </>
         )}
 
         {view === "lobby" && gameState && (
@@ -486,6 +638,7 @@ export default function Home() {
             onAssignCaptain={handleAssignCaptain}
             onUpdateRotation={handleUpdateRotation}
             onLeaveRoom={handleLeaveRoom}
+            onInviteFriends={() => setShowFriendsModal(true)}
           />
         )}
 
@@ -527,7 +680,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* 3. Toss Modal (Triggers when both ready in lobby or rematch) */}
+      {/* 3. Toss Modal */}
       {gameState?.phase === "toss" && (
         <TossModal
           state={gameState}
@@ -539,10 +692,13 @@ export default function Home() {
       )}
 
       {/* 4. Detailed Scorecard Modal */}
-      {showDetailedScorecard && gameState && (
+      {showDetailedScorecard && (selectedMatchDetail || gameState) && (
         <DetailedScorecardModal
-          state={gameState}
-          onClose={() => setShowDetailedScorecard(false)}
+          state={selectedMatchDetail || gameState}
+          onClose={() => {
+            setShowDetailedScorecard(false);
+            setSelectedMatchDetail(null);
+          }}
         />
       )}
 
@@ -552,11 +708,65 @@ export default function Home() {
       {/* 6. Settings Modal */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
 
-      {/* 7. Footer */}
+      {/* 7. Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultTab={authModalTab}
+      />
+
+      {/* 8. Matchmaking Modal */}
+      <MatchmakingModal
+        isOpen={showMatchmakingModal}
+        onClose={() => setShowMatchmakingModal(false)}
+        onMatchFound={handleMatchFound}
+      />
+
+      {/* 9. Friends Modal */}
+      <FriendsModal
+        isOpen={showFriendsModal}
+        onClose={() => setShowFriendsModal(false)}
+        activeRoomCode={roomCode}
+        onInviteToRoom={handleSendRoomInvitation}
+        onViewPublicProfile={(tag) => setSelectedPublicProfileGamerTag(tag)}
+      />
+
+      {/* 10. Profile Edit Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
+
+      {/* 11. Public Profile Inspector Modal */}
+      <PublicProfileModal
+        gamerTag={selectedPublicProfileGamerTag}
+        onClose={() => setSelectedPublicProfileGamerTag(null)}
+      />
+
+      {/* 12. Leaderboard Modal */}
+      <LeaderboardModal
+        isOpen={showLeaderboardModal}
+        onClose={() => setShowLeaderboardModal(false)}
+        onSelectGamerTag={(tag) => setSelectedPublicProfileGamerTag(tag)}
+      />
+
+      {/* 13. Notifications Drawer */}
+      <NotificationDrawer
+        isOpen={showNotificationsDrawer}
+        onClose={() => setShowNotificationsDrawer(false)}
+        onSelectNotification={(notif) => {
+          if (notif.data?.room_code) {
+            handleJoinMatch(notif.data.room_code, profile?.display_name || "Player");
+            setShowNotificationsDrawer(false);
+          }
+        }}
+      />
+
+      {/* 14. Footer */}
       <footer className="w-full bg-[#111111] border-t-4 border-[#111111] text-[#FFF9E8] py-4 px-4 text-center text-xs font-bold font-mono">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <span>SIX FINGERS © {new Date().getFullYear()} • MULTIPLAYER HAND CRICKET</span>
-          <span className="text-[#FFD900]">POWERED BY WEBRTC, FASTAPI & MEDIAPIPE</span>
+          <span>SIX FINGERS © {new Date().getFullYear()} • TWO HANDS. ONE RIVALRY.</span>
+          <span className="text-[#FFD900]">FASTAPI • NEXT.JS • WEBRTC • MEDIAPIPE</span>
         </div>
       </footer>
     </div>

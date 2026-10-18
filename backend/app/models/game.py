@@ -169,6 +169,11 @@ class MatchState(BaseModel):
     spectators: List[RoomParticipant] = Field(default_factory=list)
     spectator_count: int = 0
     
+    # User account links (for authenticated players)
+    player_1_user_id: Optional[str] = None
+    player_2_user_id: Optional[str] = None
+    match_type: str = "PRIVATE" # "PUBLIC" or "PRIVATE"
+
     # Legacy player fields (maintained for backward compatibility with 1v1 tests)
     player_1_id: str
     player_1_name: str = "Player 1"

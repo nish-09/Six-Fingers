@@ -21,7 +21,16 @@ from .models.game import (
 from .rooms.manager import room_manager
 from .engine.hand_cricket import HandCricketEngine
 from .commentary.service import commentary_service
-from .database import init_db, save_completed_match, get_match_history, get_match_detail, check_db_health
+from .database import init_db, save_completed_match, get_match_history, get_match_detail, check_db_health, User
+from .auth.security import get_optional_current_user
+from .auth.router import router as auth_router
+from .routers.profiles import router as profiles_router
+from .routers.friends import router as friends_router
+from .routers.presence import router as presence_router
+from .routers.matchmaking import router as matchmaking_router
+from .routers.invitations import router as invitations_router
+from .presence.manager import presence_manager, PresenceState
+from fastapi import Depends
 
 async def periodic_room_cleanup():
     """Background task running every 15 minutes to clean up rooms idle for > 4 hours."""
@@ -45,16 +54,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Six Fingers - Hand Cricket API", lifespan=lifespan)
 
-cors_origins_raw = os.getenv("CORS_ORIGINS", "*")
+cors_origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 allowed_origins = [o.strip() for o in cors_origins_raw.split(",")] if cors_origins_raw != "*" else ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=allowed_origins if allowed_origins != ["*"] else ["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origin_regex=r"^https?://.*" if allowed_origins == ["*"] else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
+app.include_router(profiles_router)
+app.include_router(friends_router)
+app.include_router(presence_router)
+app.include_router(matchmaking_router)
+app.include_router(invitations_router)
 
 class CreateRoomRequest(BaseModel):
     host_name: str = "Player 1"
@@ -96,10 +113,15 @@ async def get_metrics():
     return metrics
 
 @app.post("/api/rooms/create")
-async def create_room(req: CreateRoomRequest):
+async def create_room(req: CreateRoomRequest, current_user: Optional[User] = Depends(get_optional_current_user)):
     host_id = f"p_{uuid.uuid4().hex[:8]}"
     session_token = f"tok_{uuid.uuid4().hex}"
-    room = room_manager.create_room(host_id, req.host_name, session_token)
+    host_name = req.host_name
+    if current_user and req.host_name in ["Player 1", ""]:
+        host_name = current_user.full_name or current_user.username
+    room = room_manager.create_room(host_id, host_name, session_token)
+    if current_user:
+        room.state.player_1_user_id = current_user.id
     if req.players_per_team:
         room.state.rules.players_per_team = req.players_per_team
     if req.max_spectators:
@@ -115,22 +137,29 @@ async def create_room(req: CreateRoomRequest):
     }
 
 @app.post("/api/rooms/join")
-async def join_room(req: JoinRoomRequest):
+async def join_room(req: JoinRoomRequest, current_user: Optional[User] = Depends(get_optional_current_user)):
     room = room_manager.get_room(req.room_code)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found. Check the code and try again.")
     
+    player_name = req.player_name
+    if current_user and req.player_name in ["Player", ""]:
+        player_name = current_user.full_name or current_user.username
+
     user_id = f"u_{uuid.uuid4().hex[:8]}"
     session_token = f"tok_{uuid.uuid4().hex}"
     ok, msg, metadata = room.join_user(
         user_id=user_id,
-        user_name=req.player_name,
+        user_name=player_name,
         session_token=session_token,
         role=req.role,
         requested_team_id=req.team_id
     )
     if not ok:
         raise HTTPException(status_code=403, detail=msg)
+
+    if current_user and req.role == "player" and not room.state.player_2_user_id:
+        room.state.player_2_user_id = current_user.id
     
     return {
         "room_code": room.room_code,
@@ -379,6 +408,15 @@ async def websocket_endpoint(
                     room.state.current_innings_number = 1
                     HandCricketEngine.start_new_delivery(room.state)
 
+                    if room.state.player_1_user_id:
+                        asyncio.create_task(presence_manager.set_user_activity(
+                            room.state.player_1_user_id, PresenceState.IN_MATCH, "Playing Six Fingers", room.room_code
+                        ))
+                    if room.state.player_2_user_id:
+                        asyncio.create_task(presence_manager.set_user_activity(
+                            room.state.player_2_user_id, PresenceState.IN_MATCH, "Playing Six Fingers", room.room_code
+                        ))
+
                     await room_manager.broadcast_state_to_all(room, "MATCH_STARTED")
 
             # 11. Private Delivery Hand Submission (Webcam or Fallback Keypad)
@@ -399,7 +437,20 @@ async def websocket_endpoint(
                 })
 
                 if room.state.is_match_over:
-                    asyncio.create_task(save_completed_match(room.state.model_dump()))
+                    asyncio.create_task(save_completed_match(
+                        room.state.model_dump(),
+                        player_1_user_id=room.state.player_1_user_id,
+                        player_2_user_id=room.state.player_2_user_id,
+                        match_type=getattr(room.state, "match_type", "PRIVATE")
+                    ))
+                    if room.state.player_1_user_id:
+                        asyncio.create_task(presence_manager.set_user_activity(
+                            room.state.player_1_user_id, PresenceState.ONLINE, "Online · Available to play", None
+                        ))
+                    if room.state.player_2_user_id:
+                        asyncio.create_task(presence_manager.set_user_activity(
+                            room.state.player_2_user_id, PresenceState.ONLINE, "Online · Available to play", None
+                        ))
 
             # 13. Over Transition Ready (OVER_BREAK phase)
             elif msg_type == "READY_OVER_TRANSITION":

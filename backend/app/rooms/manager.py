@@ -439,7 +439,8 @@ class RoomManager:
         to_delete = []
         for code, room in self.rooms.items():
             has_connected = any(c.is_connected for c in room.connections.values())
-            if not has_connected and (now - room.last_activity > max_idle_seconds):
+            has_recent_participants = len(room.connections) > 0 and (now - room.created_at < 300.0)
+            if not has_connected and not has_recent_participants and (now - room.last_activity > max_idle_seconds):
                 to_delete.append(code)
         for code in to_delete:
             del self.rooms[code]

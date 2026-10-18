@@ -34,6 +34,10 @@ def test_operational_metrics_endpoint():
 
 def test_match_history_pagination_and_detail():
     # Save a test match
+    from app.database import init_db
+    import asyncio
+    asyncio.run(init_db())
+
     sample_match_id = f"test_match_{int(time.time())}"
     sample_state = {
         "match_id": sample_match_id,
@@ -49,7 +53,6 @@ def test_match_history_pagination_and_detail():
     }
 
     # 1. Test safe upsert: Call twice to ensure no duplicate key crash
-    import asyncio
     asyncio.run(save_completed_match(sample_state))
     sample_state["win_margin_description"] = "Titans won by 15 runs! (Updated)"
     asyncio.run(save_completed_match(sample_state))

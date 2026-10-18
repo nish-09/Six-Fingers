@@ -23,11 +23,15 @@ import {
 interface LandingHeroProps {
   onCreateMatch: (hostName: string, config?: { playersPerTeam?: number; maxSpectators?: number; overs?: number }) => void;
   onJoinMatch: (code: string, playerName: string, role: "player" | "spectator") => void;
+  onOpenAuth?: (tab?: "signin" | "register") => void;
+  onStartQuickPlay?: () => void;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
   onCreateMatch,
   onJoinMatch,
+  onOpenAuth,
+  onStartQuickPlay,
 }) => {
   const [hostName, setHostName] = useState("Player 1");
   const [joinPlayerName, setJoinPlayerName] = useState("Player 2");
@@ -92,6 +96,34 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             Play with your crew on opposing teams, rotate controllers each over, watch live as a spectator,
             and enjoy hand cricket with live webcams, secret decision locking, and multilingual commentary!
           </p>
+        </div>
+
+        {/* QUICK PLAY & ACCOUNT HERO BUTTONS */}
+        <div className="flex flex-wrap items-center justify-center gap-3 max-w-xl mx-auto">
+          {onStartQuickPlay && (
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                onStartQuickPlay();
+              }}
+              className="flex-1 min-w-[220px] py-3.5 px-6 bg-[#6500C8] hover:bg-[#5200a3] text-white border-4 border-black shadow-[6px_6px_0px_#111] font-display font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-transform hover:-translate-y-1 active:translate-x-1 active:translate-y-1"
+            >
+              <Zap className="w-5 h-5 text-[#FFD900] fill-[#FFD900]" />
+              <span>Quick Play Matchmaking</span>
+            </button>
+          )}
+          {onOpenAuth && (
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                onOpenAuth("register");
+              }}
+              className="flex-1 min-w-[220px] py-3.5 px-6 bg-[#F000A8] hover:bg-[#d60096] text-white border-4 border-black shadow-[6px_6px_0px_#111] font-display font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-transform hover:-translate-y-1 active:translate-x-1 active:translate-y-1"
+            >
+              <Award className="w-5 h-5 text-[#FFD900]" />
+              <span>Claim Gamer Tag</span>
+            </button>
+          )}
         </div>
 
         {/* ACTION PANEL: CREATE OR JOIN MATCH (Vivid Purple Container) */}
