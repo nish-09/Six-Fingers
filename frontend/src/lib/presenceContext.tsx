@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useAuth } from "./authContext";
-import { getApiBaseUrl } from "./config";
+import { getApiBaseUrl, getPresenceWsEndpoint } from "./config";
 
 export interface FriendPresence {
   user_id: string;
@@ -50,18 +50,7 @@ export const PresenceProvider: React.FC<{
       return;
     }
 
-    let wsUrl = "";
-    if (typeof window !== "undefined") {
-      const isHttps = window.location.protocol === "https:";
-      const wsProto = isHttps ? "wss:" : "ws:";
-      const host = window.location.hostname;
-      if (host === "localhost" || host === "127.0.0.1") {
-        wsUrl = `${wsProto}//${host}:8000/ws/presence?token=${encodeURIComponent(token)}`;
-      } else {
-        wsUrl = `${wsProto}//${window.location.host}/ws/presence?token=${encodeURIComponent(token)}`;
-      }
-    }
-
+    const wsUrl = getPresenceWsEndpoint(token);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

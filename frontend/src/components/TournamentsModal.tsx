@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Trophy, Plus, ArrowRight, Play, Users, Medal, AlertCircle, ShieldCheck } from "lucide-react";
 import { soundEngine } from "@/lib/sound";
 import { useAuth } from "@/lib/authContext";
+import { getApiBaseUrl } from "@/lib/config";
 
 interface TournamentItem {
   id: string;
@@ -43,7 +44,7 @@ export const TournamentsModal: React.FC<TournamentsModalProps> = ({ onClose, onJ
   const fetchTournaments = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/tournaments`);
+      const res = await fetch(`${getApiBaseUrl()}/api/tournaments`);
       if (res.ok) {
         const data = await res.json();
         setTournaments(data.tournaments || []);
@@ -61,7 +62,7 @@ export const TournamentsModal: React.FC<TournamentsModalProps> = ({ onClose, onJ
 
   const fetchTournamentDetail = async (id: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/tournaments/${id}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/tournaments/${id}`);
       if (res.ok) {
         const data = await res.json();
         setSelectedTournament(data);
@@ -78,7 +79,7 @@ export const TournamentsModal: React.FC<TournamentsModalProps> = ({ onClose, onJ
     setErrorMsg(null);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/tournaments/create`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/tournaments/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +112,7 @@ export const TournamentsModal: React.FC<TournamentsModalProps> = ({ onClose, onJ
   const handleJoin = async (id: string) => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/tournaments/${id}/join`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/tournaments/${id}/join`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -130,7 +131,7 @@ export const TournamentsModal: React.FC<TournamentsModalProps> = ({ onClose, onJ
   const handleStart = async (id: string) => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/tournaments/${id}/start`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/tournaments/${id}/start`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -146,7 +147,7 @@ export const TournamentsModal: React.FC<TournamentsModalProps> = ({ onClose, onJ
   const handleLaunchFixture = async (fixtureId: string) => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/tournaments/fixture/${fixtureId}/create-room`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/tournaments/fixture/${fixtureId}/create-room`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

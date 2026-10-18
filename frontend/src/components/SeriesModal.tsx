@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Trophy, Swords, Plus, ArrowRight, Play, CheckCircle2, AlertCircle } from "lucide-react";
 import { soundEngine } from "@/lib/sound";
 import { useAuth } from "@/lib/authContext";
+import { getApiBaseUrl } from "@/lib/config";
 
 interface SeriesItem {
   id: string;
@@ -52,7 +53,7 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ onClose, onJoinRoom })
     if (!token) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/series/user/active`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/series/user/active`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -73,7 +74,7 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ onClose, onJoinRoom })
   const fetchSeriesDetail = async (id: string) => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/series/${id}`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/series/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -92,7 +93,7 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ onClose, onJoinRoom })
     setErrorMsg(null);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/series/create`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/series/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -129,7 +130,7 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ onClose, onJoinRoom })
   const handleStartNextMatch = async (seriesId: string) => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/series/${seriesId}/next-match`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/series/${seriesId}/next-match`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
