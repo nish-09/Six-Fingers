@@ -293,6 +293,8 @@ class MatchRecord(Base):
     second_innings_wickets: Mapped[int] = mapped_column(Integer, default=0)
     total_deliveries: Mapped[int] = mapped_column(Integer, default=0)
     scorecard_json: Mapped[str] = mapped_column(Text)
+    is_bot_match: Mapped[bool] = mapped_column(Boolean, default=False)
+    bot_difficulty: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 class Series(Base):
@@ -403,6 +405,10 @@ def _migrate_match_records_columns(sync_conn):
             sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN series_id VARCHAR(64)"))
         if "tournament_id" not in existing_cols:
             sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN tournament_id VARCHAR(64)"))
+        if "is_bot_match" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN is_bot_match BOOLEAN DEFAULT FALSE"))
+        if "bot_difficulty" not in existing_cols:
+            sync_conn.execute(text("ALTER TABLE match_records ADD COLUMN bot_difficulty VARCHAR(32)"))
 
 def _migrate_auth_and_profile_columns(sync_conn):
     insp = inspect(sync_conn)
@@ -549,6 +555,8 @@ async def save_completed_match(
 
     series_id = state_dict.get("series_id")
     tournament_id = state_dict.get("tournament_id")
+    is_bot_match = bool(state_dict.get("is_bot_match", False))
+    bot_difficulty = state_dict.get("bot_difficulty")
 
     # Detect user IDs from state if not passed explicitly
     p1_uid = player_1_user_id or state_dict.get("player_1_user_id")
@@ -567,6 +575,8 @@ async def save_completed_match(
             existing.second_innings_wickets = inn2_wkt
             existing.total_deliveries = deliv_count
             existing.scorecard_json = json.dumps(state_dict)
+            existing.is_bot_match = is_bot_match
+            existing.bot_difficulty = bot_difficulty
             if p1_uid:
                 existing.player_1_user_id = p1_uid
             if p2_uid:
@@ -594,6 +604,8 @@ async def save_completed_match(
                 second_innings_wickets=inn2_wkt,
                 total_deliveries=deliv_count,
                 scorecard_json=json.dumps(state_dict),
+                is_bot_match=is_bot_match,
+                bot_difficulty=bot_difficulty,
                 created_at=time.time()
             )
             session.add(record)
@@ -828,6 +840,8 @@ async def get_match_history(limit: int = 20, offset: int = 0, user_id: Optional[
                 "first_innings": f"{r.first_innings_runs}/{r.first_innings_wickets}",
                 "second_innings": f"{r.second_innings_runs}/{r.second_innings_wickets}",
                 "total_deliveries": r.total_deliveries,
+                "is_bot_match": getattr(r, "is_bot_match", False),
+                "bot_difficulty": getattr(r, "bot_difficulty", None),
                 "created_at": r.created_at
             }
             for r in records

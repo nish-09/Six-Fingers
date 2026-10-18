@@ -440,6 +440,8 @@ async def websocket_endpoint(
                 # Fallback to legacy check if only 2 players
                 if (room.state.player_1_ready and room.state.player_2_ready) or all_players_ready:
                     room.state.phase = MatchPhase.TOSS
+                    if room.bot_session:
+                        room.bot_session.on_phase_change(MatchPhase.TOSS)
 
                 await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
 
@@ -481,6 +483,8 @@ async def websocket_endpoint(
                         ))
 
                     await room_manager.broadcast_state_to_all(room, "MATCH_STARTED")
+                    if room.bot_session:
+                        room.bot_session.on_phase_change(MatchPhase.DECISION)
 
             # 11. Private Delivery Hand Submission (Webcam or Fallback Keypad)
             elif msg_type == "SUBMIT_HAND":
@@ -500,6 +504,8 @@ async def websocket_endpoint(
                 })
 
                 if room.state.is_match_over:
+                    if room.bot_session:
+                        asyncio.create_task(room.bot_session.cleanup())
                     asyncio.create_task(save_completed_match(
                         room.state.model_dump(),
                         player_1_user_id=room.state.player_1_user_id,
@@ -510,10 +516,15 @@ async def websocket_endpoint(
                         asyncio.create_task(presence_manager.set_user_activity(
                             room.state.player_1_user_id, PresenceState.ONLINE, "Online · Available to play", None
                         ))
-                    if room.state.player_2_user_id:
+                    if room.state.player_2_user_id and not getattr(room.state, "is_bot_match", False):
                         asyncio.create_task(presence_manager.set_user_activity(
                             room.state.player_2_user_id, PresenceState.ONLINE, "Online · Available to play", None
                         ))
+                elif both_ready:
+                    HandCricketEngine.start_new_delivery(room.state)
+                    await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
+                    if room.bot_session:
+                        room.bot_session.on_phase_change(MatchPhase.DECISION)
 
             # 13. Over Transition Ready (OVER_BREAK phase)
             elif msg_type == "READY_OVER_TRANSITION":
@@ -526,7 +537,10 @@ async def websocket_endpoint(
             elif msg_type == "START_INNINGS_2":
                 if room.state.phase == MatchPhase.INNINGS_BREAK and (user_conn.is_host or user_conn.is_captain):
                     HandCricketEngine.transition_to_innings_2(room.state)
+                    HandCricketEngine.start_new_delivery(room.state)
                     await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
+                    if room.bot_session:
+                        room.bot_session.on_phase_change(MatchPhase.DECISION)
 
             # 15. Rematch
             elif msg_type == "REQUEST_REMATCH":
@@ -571,6 +585,8 @@ async def websocket_endpoint(
             })
         else:
             # Player disconnected
+            if room.bot_session:
+                asyncio.create_task(room.bot_session.cleanup())
             if player_id == room.state.player_1_id:
                 room.state.player_1_connected = False
             elif player_id == room.state.player_2_id:

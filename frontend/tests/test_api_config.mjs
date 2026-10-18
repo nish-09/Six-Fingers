@@ -5,6 +5,7 @@ import {
   getWsBaseUrl,
   getWsEndpoint,
   getPresenceWsEndpoint,
+  getMatchmakingWsEndpoint,
   DEFAULT_PRODUCTION_BACKEND
 } from "../src/lib/config.ts";
 import assert from "node:assert";
@@ -108,6 +109,17 @@ assert.strictEqual(
   "Presence WebSocket URL must target /ws/presence with token"
 );
 console.log("✔ Test 8: getPresenceWsEndpoint formats presence endpoint cleanly");
+
+// Test 8b: getMatchmakingWsEndpoint creates correct matchmaking queue URL
+resetEnv();
+process.env.NEXT_PUBLIC_BACKEND_URL = "https://six-fingers-backend.onrender.com";
+const mmWsUrl = getMatchmakingWsEndpoint("mm_token_456");
+assert.strictEqual(
+  mmWsUrl,
+  "wss://six-fingers-backend.onrender.com/api/matchmaking/ws?token=mm_token_456",
+  "Matchmaking WebSocket URL must target /api/matchmaking/ws with token"
+);
+console.log("✔ Test 8b: getMatchmakingWsEndpoint formats matchmaking queue endpoint cleanly");
 
 // Test 9: Browser Vercel domain fallback
 resetEnv();

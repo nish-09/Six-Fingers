@@ -224,3 +224,5 @@ class MatchState(BaseModel):
     win_margin_description: Optional[str] = None
     is_super_over: bool = False
     is_match_over: bool = False
+    is_bot_match: bool = False
+    bot_difficulty: Optional[str] = None

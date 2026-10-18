@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/authContext";
 import { AvatarIcon } from "./Avatars";
 import { Zap, X, Shield, Swords, Timer, UserCheck } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/config";
+import { getApiBaseUrl, getMatchmakingWsEndpoint } from "@/lib/config";
 
 interface MatchmakingModalProps {
   isOpen: boolean;
@@ -48,19 +48,8 @@ export const MatchmakingModal: React.FC<MatchmakingModalProps> = ({
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
-    // Connect to WebSocket
-    let wsUrl = "";
-    if (typeof window !== "undefined") {
-      const isHttps = window.location.protocol === "https:";
-      const wsProto = isHttps ? "wss:" : "ws:";
-      const host = window.location.hostname;
-      if (host === "localhost" || host === "127.0.0.1") {
-        wsUrl = `${wsProto}//${host}:8000/api/matchmaking/ws?token=${encodeURIComponent(token)}`;
-      } else {
-        wsUrl = `${wsProto}//${host}/api/matchmaking/ws?token=${encodeURIComponent(token)}`;
-      }
-    }
-
+    // Connect to WebSocket using centralized endpoint resolver
+    const wsUrl = getMatchmakingWsEndpoint(token);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

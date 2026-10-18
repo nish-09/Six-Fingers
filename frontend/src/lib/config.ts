@@ -106,3 +106,11 @@ export function getPresenceWsEndpoint(token: string): string {
   const baseWs = getWsBaseUrl();
   return `${baseWs}/ws/presence?token=${encodeURIComponent(token)}`;
 }
+
+/**
+ * Constructs the matchmaking queue WebSocket endpoint: {wsBase}/api/matchmaking/ws?token=...
+ */
+export function getMatchmakingWsEndpoint(token: string): string {
+  const baseWs = getWsBaseUrl();
+  return `${baseWs}/api/matchmaking/ws?token=${encodeURIComponent(token)}`;
+}

@@ -42,6 +42,7 @@ class RoomUserConnection:
         self.is_connected = False
         self.is_camera_ready = False
         self.is_mic_ready = False
+        self.is_bot = False
         self.last_chat_time = 0.0
         self.chat_count_window = 0
 
@@ -51,6 +52,7 @@ class MatchRoom:
         self.created_at = time.time()
         self.last_activity = time.time()
         self.host_id = host_id
+        self.bot_session: Optional[Any] = None
         
         # All user connections (keyed by user_id)
         self.connections: Dict[str, RoomUserConnection] = {}
@@ -443,6 +445,9 @@ class RoomManager:
             if not has_connected and not has_recent_participants and (now - room.last_activity > max_idle_seconds):
                 to_delete.append(code)
         for code in to_delete:
+            room = self.rooms.get(code)
+            if room and room.bot_session:
+                asyncio.create_task(room.bot_session.cleanup())
             del self.rooms[code]
         return len(to_delete)
 
@@ -682,6 +687,17 @@ class RoomManager:
                     "state": state.model_dump(exclude={"pending_submissions"}),
                     "commentary": commentary_dict
                 })
+
+                # Notify active bot session if this is a bot match
+                if room.bot_session:
+                    if state.is_match_over:
+                        asyncio.create_task(room.bot_session.cleanup())
+                    elif state.phase == MatchPhase.INNINGS_BREAK:
+                        room.bot_session.on_phase_change(MatchPhase.INNINGS_BREAK)
+                    elif state.phase == MatchPhase.OVER_BREAK:
+                        room.bot_session.on_phase_change(MatchPhase.OVER_BREAK)
+                    else:
+                        room.bot_session.on_phase_change(MatchPhase.DISCUSSION)
 
     async def handle_chat_message(
         self,

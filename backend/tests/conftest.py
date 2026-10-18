@@ -2,6 +2,7 @@ import pytest
 import asyncio
 from app.rooms.manager import room_manager
 from app.matchmaking.queue import matchmaking_coordinator
+from app.bots.registry import bot_registry
 from app.database import init_db, AsyncSessionLocal, engine
 from sqlalchemy import text
 
@@ -9,6 +10,7 @@ from sqlalchemy import text
 def clean_room_manager_and_db():
     async def cleanup():
         await init_db()
+        await bot_registry.reset_for_testing()
         async with AsyncSessionLocal() as session:
             await session.execute(text("DELETE FROM tournament_fixtures"))
             await session.execute(text("DELETE FROM tournament_participants"))
@@ -27,5 +29,6 @@ def clean_room_manager_and_db():
     room_manager.rooms.clear()
     matchmaking_coordinator.queue.clear()
     yield
+    asyncio.run(bot_registry.reset_for_testing())
     room_manager.rooms.clear()
     matchmaking_coordinator.queue.clear()
