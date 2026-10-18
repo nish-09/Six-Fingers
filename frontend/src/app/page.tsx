@@ -11,7 +11,7 @@ import { DetailedScorecardModal } from "@/components/DetailedScorecardModal";
 import { MatchHistoryModal } from "@/components/MatchHistoryModal";
 import { SettingsModal } from "@/components/SettingsModal";
 import { WebRTCManager } from "@/lib/webrtc";
-import { soundEngine } from "@/lib/sound";
+import { getApiBaseUrl, getWsEndpoint } from "@/lib/config";
 
 export default function Home() {
   // App views: "landing" | "lobby" | "match"
@@ -95,8 +95,7 @@ export default function Home() {
     host: boolean,
     role: "player" | "spectator"
   ) => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `ws://${window.location.hostname}:8000/ws`;
-    const fullWsUrl = `${wsUrl}/${code}?player_id=${pId}&session_token=${token}&role=${role}`;
+    const fullWsUrl = getWsEndpoint(code, pId, token, role);
 
     const ws = new WebSocket(fullWsUrl);
     wsRef.current = ws;
@@ -248,7 +247,7 @@ export default function Home() {
     config?: { playersPerTeam?: number; maxSpectators?: number; overs?: number }
   ) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/api/rooms/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -279,7 +278,7 @@ export default function Home() {
     teamId?: "team_a" | "team_b"
   ) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/api/rooms/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

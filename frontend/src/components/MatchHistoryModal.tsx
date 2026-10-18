@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, History, Trophy, Calendar } from "lucide-react";
 import { soundEngine } from "@/lib/sound";
+import { getApiBaseUrl } from "@/lib/config";
 
 interface MatchHistoryModalProps {
   onClose: () => void;
@@ -13,7 +14,7 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose })
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = getApiBaseUrl();
         const res = await fetch(`${apiUrl}/api/history`);
         if (res.ok) {
           const data = await res.json();

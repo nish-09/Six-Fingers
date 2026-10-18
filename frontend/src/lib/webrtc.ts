@@ -7,13 +7,28 @@ export interface WebRTCCallbacks {
   onError?: (err: Error) => void;
 }
 
-const ICE_SERVERS: RTCConfiguration = {
-  iceServers: [
+export function getIceServers(): RTCConfiguration {
+  const servers: RTCIceServer[] = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
-  ],
-};
+  ];
+
+  if (process.env.NEXT_PUBLIC_TURN_SERVER_URL) {
+    const turnConfig: RTCIceServer = {
+      urls: process.env.NEXT_PUBLIC_TURN_SERVER_URL,
+    };
+    if (process.env.NEXT_PUBLIC_TURN_USERNAME) {
+      turnConfig.username = process.env.NEXT_PUBLIC_TURN_USERNAME;
+    }
+    if (process.env.NEXT_PUBLIC_TURN_CREDENTIAL) {
+      turnConfig.credential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+    }
+    servers.push(turnConfig);
+  }
+
+  return { iceServers: servers };
+}
 
 export class WebRTCManager {
   private pc: RTCPeerConnection | null = null;
@@ -64,7 +79,7 @@ export class WebRTCManager {
       this.pc.close();
     }
 
-    this.pc = new RTCPeerConnection(ICE_SERVERS);
+    this.pc = new RTCPeerConnection(getIceServers());
 
     this.pc.onicecandidate = (event) => {
       if (event.candidate && this.callbacks.onSendSignal) {
