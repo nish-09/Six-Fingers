@@ -71,11 +71,11 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-sm bg-[#FFF9E8] h-full border-l-4 border-black shadow-[-10px_0px_0px_#111] flex flex-col">
-        {/* Header - Inverted Palette */}
-        <div className="bg-[#FFD900] p-4 border-b-4 border-black flex items-center justify-between text-black">
+        {/* Header */}
+        <div className="bg-[#6500C8] p-4 border-b-4 border-black flex items-center justify-between text-white">
           <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-[#1A0038]" />
-            <span className="font-extrabold text-lg tracking-wider uppercase font-display text-black">
+            <Bell className="w-5 h-5 text-[#FFD900]" />
+            <span className="font-extrabold text-lg tracking-wider uppercase font-display">
               Notifications
             </span>
           </div>

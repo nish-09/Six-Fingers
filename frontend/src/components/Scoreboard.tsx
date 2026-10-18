@@ -79,14 +79,14 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
   const reqRunRate = runsNeeded !== null && remainingBalls > 0 ? ((runsNeeded / remainingBalls) * ballsPerOver).toFixed(1) : null;
 
   return (
-    <div className="w-full bg-[#FFD900] border-4 border-[#111111] rounded-2xl shadow-brutal p-3 sm:p-4 text-[#111111]">
+    <div className="w-full bg-[#6500C8] border-4 border-[#111111] rounded-2xl shadow-brutal p-3 sm:p-4 text-white">
       {/* Top Header: Innings & Target / RRR Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b-3 border-[#111111] pb-2 mb-3 bg-[#E5C200] -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 p-3 rounded-t-xl">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b-3 border-[#111111] pb-2 mb-3 bg-[#470094] -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 p-3 rounded-t-xl">
         <div className="flex items-center gap-2">
-          <span className="bg-[#6500C8] text-white text-xs font-black uppercase px-2.5 py-1 rounded-lg border-2 border-[#111111] shadow-brutal-sm">
+          <span className="bg-[#FFD900] text-[#111111] text-xs font-black uppercase px-2.5 py-1 rounded-lg border-2 border-[#111111] shadow-brutal-sm">
             INNINGS {currentInningsNum}
           </span>
-          <span className="font-display font-black text-sm sm:text-base tracking-wide text-[#111111]">
+          <span className="font-display font-black text-sm sm:text-base tracking-wide text-[#FFF9E8]">
             {battingTeamName} vs {bowlingTeamName}
           </span>
         </div>

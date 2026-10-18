@@ -218,11 +218,11 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl bg-[#FFF9E8] border-4 border-black shadow-[10px_10px_0px_#111] overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Header - Inverted Palette: Electric Yellow with Dark Text */}
-        <div className="bg-[#FFD900] p-4 border-b-4 border-black flex items-center justify-between text-black">
+        {/* Header */}
+        <div className="bg-[#6500C8] p-4 border-b-4 border-black flex items-center justify-between text-white">
           <div className="flex items-center gap-2">
-            <Users className="w-6 h-6 text-[#1A0038]" />
-            <span className="font-extrabold text-xl tracking-wider uppercase font-display text-black">
+            <Users className="w-6 h-6 text-[#FFD900]" />
+            <span className="font-extrabold text-xl tracking-wider uppercase font-display">
               Gamer Social Circle
             </span>
           </div>

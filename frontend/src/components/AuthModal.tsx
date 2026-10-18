@@ -340,11 +340,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-xl bg-[#FFF9E8] border-4 border-black shadow-[8px_8px_0px_#111] overflow-hidden max-h-[92vh] flex flex-col">
-        {/* Header Bar - INVERTED PALETTE: Rich Electric Yellow Background with Dark Text */}
-        <div className="bg-[#FFD900] p-4 border-b-4 border-black flex items-center justify-between text-black">
+        {/* Header Bar */}
+        <div className="bg-[#6500C8] p-4 border-b-4 border-black flex items-center justify-between text-white">
           <div className="flex items-center space-x-2">
-            <Zap className="w-6 h-6 text-[#1A0038] fill-[#1A0038]" />
-            <span className="font-extrabold text-xl tracking-wider uppercase font-display text-black">
+            <Zap className="w-6 h-6 text-[#FFD900] fill-[#FFD900]" />
+            <span className="font-extrabold text-xl tracking-wider uppercase font-display">
               {tab === "signin" ? "Gamer Sign In" : "Player Registration"}
             </span>
           </div>

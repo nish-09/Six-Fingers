@@ -20,12 +20,12 @@
 }
 
 body {
-  background-color: #1A0038;
-  color: #FFFFFF;
+  background-color: var(--bg-yellow);
+  color: var(--fg-black);
   font-family: var(--font-space);
   background-image: 
-    linear-gradient(rgba(255, 217, 0, 0.08) 2px, transparent 2px),
-    linear-gradient(90deg, rgba(255, 217, 0, 0.08) 2px, transparent 2px);
+    linear-gradient(rgba(17, 17, 17, 0.08) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(17, 17, 17, 0.08) 2px, transparent 2px);
   background-size: 32px 32px;
   background-position: -2px -2px;
   min-height: 100vh;
@@ -125,10 +125,10 @@ body {
   box-shadow: 2px 2px 0 #111111;
 }
 
-/* Neo-brutalist Panels - Inverted Primary Role */
+/* Neo-brutalist Panels */
 .panel-brutal-purple {
-  background-color: #FFD900;
-  color: #111111;
+  background-color: #6500C8;
+  color: #FFFFFF;
   border: 4px solid #111111;
   border-radius: 20px;
   box-shadow: 8px 8px 0 #111111;
@@ -172,11 +172,11 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #1A0038;
-  border-left: 2px solid #FFD900;
+  background: #FFD900;
+  border-left: 2px solid #111111;
 }
 ::-webkit-scrollbar-thumb {
-  background: #FFD900;
+  background: #6500C8;
   border: 2px solid #111111;
   border-radius: 4px;
 }
