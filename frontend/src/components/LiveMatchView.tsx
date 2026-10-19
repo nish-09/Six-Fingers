@@ -29,6 +29,7 @@ import { ChatDrawer, ChatMessageItem } from "./ChatDrawer";
 import { WebcamEffectsModal } from "./WebcamEffectsModal";
 import { VoiceEffectsModal } from "./VoiceEffectsModal";
 import { CinematicMatchOverlay } from "./CinematicMatchOverlay";
+import { MatchIntroOverlay } from "./MatchIntroOverlay";
 import { WebcamEffectId, WebcamEffectsPipeline } from "@/lib/webcamEffects";
 import { VoicePresetId, globalAudioEffects } from "@/lib/audioEffects";
 
@@ -49,6 +50,7 @@ interface LiveMatchViewProps {
   myLockedNumber: number | null;
   opponentLocked: boolean;
   chatMessages?: ChatMessageItem[];
+  botTypingState?: { isTyping: boolean; botName: string } | null;
   onSendChat?: (channel: "all" | "team" | "spectator", text: string, reaction?: string) => void;
   onSendMessage?: (channel: string, text: string, reaction?: string) => void;
   onApplyWebcamEffectTrack?: (track: MediaStreamTrack | null) => void;
@@ -72,6 +74,7 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
   myLockedNumber,
   opponentLocked,
   chatMessages = [],
+  botTypingState,
   onSendChat,
   onSendMessage,
   onApplyWebcamEffectTrack,
@@ -95,6 +98,11 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
 
   // Chat Drawer toggle
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  // Match intro & Auto-ready countdown
+  const [hasDismissedIntro, setHasDismissedIntro] = useState<boolean>(false);
+  const [revealCountdown, setRevealCountdown] = useState<number>(3);
+  const lastSoundDeliveryIdRef = useRef<string | null>(null);
 
   // Vision detection state
   const [currentGesture, setCurrentGesture] = useState<GestureResult | null>(null);
@@ -335,17 +343,46 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
     };
   }, [state.phase, state.current_delivery_id, myLockedNumber, isActiveController]);
 
-  // Audio / Confetti on Simultaneous Reveal
+  // Check if current opponent is a bot
+  const isBotMatch = Boolean(
+    state.player_2_id?.startsWith("bot_") ||
+      state.player_1_id?.startsWith("bot_") ||
+      state.participants?.[state.player_2_id]?.is_bot ||
+      state.rules?.is_bot_match
+  );
+
+  // Audio / Confetti on Simultaneous Reveal (with deduplication and Indian cricket sound synthesis)
   useEffect(() => {
     if (state.phase === "reveal" && latestRevealResult) {
+      const delivId = latestRevealResult.delivery_id;
+      if (delivId && lastSoundDeliveryIdRef.current === delivId) return;
+      if (delivId) lastSoundDeliveryIdRef.current = delivId;
+
+      const prefersReducedMotion =
+        typeof window !== "undefined"
+          ? localStorage.getItem("sixfingers_reduced_motion") === "true"
+          : false;
+
       if (latestRevealResult.is_wicket) {
         soundEngine.playWicket();
       } else if (latestRevealResult.runs_scored === 6) {
         soundEngine.playSixFanfare();
-        confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+        if (!prefersReducedMotion) {
+          try {
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+          } catch (_) {}
+        }
       } else if (latestRevealResult.runs_scored === 4) {
         soundEngine.playFourFanfare();
-        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+        if (!prefersReducedMotion) {
+          try {
+            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+          } catch (_) {}
+        }
+      } else if (latestRevealResult.runs_scored === 0) {
+        soundEngine.playDotBall();
+      } else if (latestRevealResult.runs_scored === 1) {
+        soundEngine.playSingleRun();
       } else {
         soundEngine.playBatHit();
       }
@@ -356,17 +393,51 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
     }
   }, [state.phase, latestRevealResult]);
 
+  // Readiness
+  const isMyReady = Boolean(state.ready_for_next_ball?.[playerId]);
+  const isOverReady = Boolean(state.over_transition_ready?.[playerId]);
+
+  // Auto-ready countdown for bot matches during reveal
+  useEffect(() => {
+    if (state.phase === "reveal" && isBotMatch && isActiveController && !isMyReady) {
+      setRevealCountdown(3);
+      const interval = setInterval(() => {
+        setRevealCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            onReadyNextBall();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [state.phase, isBotMatch, isActiveController, isMyReady, state.current_delivery_id, onReadyNextBall]);
+
   // In-Game Player Stats
   const strikerStats = currentInnings?.batters?.[state.current_striker_id || ""];
   const nonStrikerStats = currentInnings?.batters?.[state.current_non_striker_id || ""];
   const bowlerStats = currentInnings?.bowlers?.[state.current_bowler_id || ""];
 
-  // Readiness
-  const isMyReady = Boolean(state.ready_for_next_ball?.[playerId]);
-  const isOverReady = Boolean(state.over_transition_ready?.[playerId]);
-
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      {/* 0. MATCH INTRO SHOWDOWN MODAL */}
+      {!hasDismissedIntro &&
+        state.current_innings_number === 1 &&
+        (currentInnings?.balls_bowled || 0) === 0 &&
+        (state.phase === "decision" || state.phase === "discussion") && (
+          <MatchIntroOverlay
+            player1Name={state.player_1_name || "Player 1"}
+            player2Name={state.player_2_name || (isBotMatch ? "AI Bot" : "Opponent")}
+            player1GamerTag={state.player_1_gamer_tag}
+            player2GamerTag={state.player_2_gamer_tag}
+            isBotOpponent={isBotMatch}
+            userIsBatting={isActiveBatting}
+            oversPerInnings={state.rules?.overs_per_innings || 1}
+            onDismiss={() => setHasDismissedIntro(true)}
+          />
+        )}
       {/* 1. SCOREBOARD */}
       {currentInnings && (
         <Scoreboard
@@ -795,17 +866,31 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
 
           {/* Action button for active players */}
           {isActiveController && (
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex flex-col items-center gap-2">
               <button
+                disabled={isMyReady}
                 onClick={() => {
                   soundEngine.playClick();
                   onReadyNextBall();
                 }}
-                className="btn-brutal-purple text-base px-8 py-3 rounded-xl flex items-center gap-2"
+                className={`btn-brutal-purple text-base px-8 py-3 rounded-xl flex items-center gap-2 ${
+                  isMyReady ? "opacity-75 cursor-not-allowed" : ""
+                }`}
               >
-                <span>READY FOR NEXT BALL</span>
+                <span>
+                  {isMyReady
+                    ? "WAITING FOR NEXT BALL..."
+                    : isBotMatch
+                    ? `READY FOR NEXT BALL 👉 (${revealCountdown}s)`
+                    : "READY FOR NEXT BALL"}
+                </span>
                 <ArrowRight className="w-5 h-5" />
               </button>
+              {isBotMatch && !isMyReady && (
+                <span className="text-[11px] font-mono text-gray-600 font-bold animate-pulse">
+                  ⚡ Auto-advancing in {revealCountdown}s (hands-free webcam enabled)
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -936,6 +1021,7 @@ export const LiveMatchView: React.FC<LiveMatchViewProps> = ({
       {(onSendChat || onSendMessage) && (
         <ChatDrawer
           messages={chatMessages}
+          botTypingState={botTypingState}
           currentUserId={playerId}
           currentUserRole={userRole || state.user_role || (isSpectator ? "spectator" : "player")}
           currentUserTeamId={state.participants?.[playerId]?.team_id}

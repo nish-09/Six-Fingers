@@ -203,6 +203,7 @@ def test_spectator_disconnection_does_not_interrupt_match():
         with client.websocket_connect(f"/ws/{code}?player_id={spec_id}&session_token={spec_tok}") as ws_spec:
             ws_spec.receive_json() # spec init
             ws_p1.receive_json() # spec joined
+            ws_spec.close()
 
         # ws_spec disconnects here
         leave_msg = ws_p1.receive_json()

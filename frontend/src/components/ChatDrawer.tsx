@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, X, Flame, Sparkles, Smile, Shield, Eye } from "lucide-react";
+import { MessageSquare, Send, X, Flame, Sparkles, Smile, Shield, Eye, Bot } from "lucide-react";
 import { soundEngine } from "@/lib/sound";
 
 export interface ChatMessageItem {
   id: string;
   sender_id: string;
   sender_name: string;
-  sender_role: string; // "player" | "spectator"
+  sender_role: string; // "player" | "spectator" | "bot"
   team_id?: string | null;
   channel: string;
   text: string;
@@ -22,6 +22,7 @@ interface ChatDrawerProps {
   isOpen: boolean;
   onToggle: () => void;
   onSendMessage: (channel: string, text: string, reaction?: string) => void;
+  botTypingState?: { isTyping: boolean; botName: string } | null;
 }
 
 const QUICK_REACTIONS = ["🏏", "🚀", "🔥", "👏", "😱", "⚡", "💯", "🎯"];
@@ -34,17 +35,24 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   isOpen,
   onToggle,
   onSendMessage,
+  botTypingState,
 }) => {
   const [inputText, setInputText] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<"all" | "team" | "spectator">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Check if bot banter is enabled in user settings
+  const isBotBanterEnabled =
+    typeof window !== "undefined"
+      ? localStorage.getItem("sixfingers_bot_banter_enabled") !== "false"
+      : true;
+
+  // Auto-scroll to bottom on new messages or when typing starts
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, botTypingState?.isTyping]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,6 +152,10 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
             ) : (
               messages
                 .filter((m) => {
+                  // Filter out bot messages if user disabled banter
+                  if (!isBotBanterEnabled && m.sender_role === "bot") {
+                    return false;
+                  }
                   if (selectedChannel === "all") return m.channel === "all";
                   if (selectedChannel === "team") return m.channel === "team";
                   if (selectedChannel === "spectator") return m.channel === "spectator";
@@ -152,31 +164,37 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                 .map((msg) => {
                   const isMe = msg.sender_id === currentUserId;
                   const isSpectator = msg.sender_role === "spectator";
+                  const isBot = msg.sender_role === "bot";
 
                   return (
                     <div
                       key={msg.id}
-                      className={`p-2 rounded-xl border-2 border-[#111111] shadow-brutal-sm text-xs ${
+                      className={`p-2.5 rounded-xl border-2 shadow-brutal-sm text-xs transition-all ${
                         isMe
                           ? "bg-[#9BE52E]/30 ml-4 border-[#111111]"
+                          : isBot
+                          ? "bg-gradient-to-r from-white to-[#FFD900]/25 mr-4 border-[#6500C8] shadow-brutal-sm"
                           : isSpectator
-                          ? "bg-[#FFD900]/25 mr-4"
-                          : "bg-white mr-4"
+                          ? "bg-[#FFD900]/25 mr-4 border-[#111111]"
+                          : "bg-white mr-4 border-[#111111]"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
+                          {isBot && <Bot className="w-3.5 h-3.5 text-[#6500C8]" />}
                           <span className="font-display font-black text-[#111111]">
                             {msg.sender_name}
                           </span>
                           <span
                             className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded border border-black ${
-                              isSpectator
+                              isBot
+                                ? "bg-[#FFD900] text-[#111111]"
+                                : isSpectator
                                 ? "bg-[#FFD900] text-black"
                                 : "bg-[#6500C8] text-white"
                             }`}
                           >
-                            {isSpectator ? "SPECTATOR 👁️" : "PLAYER 🏏"}
+                            {isBot ? "BOT 🤖" : isSpectator ? "SPECTATOR 👁️" : "PLAYER 🏏"}
                           </span>
                         </div>
                         <span className="text-[9px] font-mono text-gray-500">
@@ -188,7 +206,9 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                       </div>
 
                       {msg.text && (
-                        <p className="text-gray-900 font-medium break-words">{msg.text}</p>
+                        <p className={`font-medium break-words ${isBot ? "text-purple-950 font-bold" : "text-gray-900"}`}>
+                          {msg.text}
+                        </p>
                       )}
 
                       {msg.reaction && (
@@ -200,6 +220,21 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                   );
                 })
             )}
+
+            {/* Subtle Bot Typing Indicator */}
+            {botTypingState?.isTyping && (
+              <div className="flex items-center gap-2 p-2 bg-white/90 border-2 border-dashed border-[#6500C8] rounded-xl text-xs mr-4 text-[#6500C8] font-mono animate-pulse shadow-sm">
+                <Bot className="w-4 h-4 text-[#6500C8]" />
+                <span className="font-black">{botTypingState.botName}</span>
+                <span className="text-[11px] text-gray-500 font-bold">is sledging...</span>
+                <span className="flex gap-1 items-center ml-1">
+                  <span className="w-1.5 h-1.5 bg-[#6500C8] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-1.5 bg-[#6500C8] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-1.5 bg-[#6500C8] rounded-full animate-bounce" />
+                </span>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 

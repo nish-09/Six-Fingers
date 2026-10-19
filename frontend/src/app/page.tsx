@@ -40,6 +40,7 @@ export default function Home() {
   const [userRole, setUserRole] = useState<"player" | "spectator">("player");
   const [gameState, setGameState] = useState<any | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [botTypingState, setBotTypingState] = useState<{ isTyping: boolean; botName: string } | null>(null);
 
   // Live Gameplay Delivery State
   const [myLockedNumber, setMyLockedNumber] = useState<number | null>(null);
@@ -219,9 +220,17 @@ export default function Home() {
             break;
 
           case "CHAT_BROADCAST":
+          case "CHAT_MESSAGE":
             if (msg.message) {
               setChatMessages((prev) => [...prev, msg.message]);
+              setBotTypingState(null);
             }
+            break;
+
+          case "BOT_TYPING":
+            setBotTypingState(
+              msg.is_typing ? { isTyping: true, botName: msg.bot_name || "Bot" } : null
+            );
             break;
 
           case "TOSS_RESULT":
@@ -699,6 +708,7 @@ export default function Home() {
                 myLockedNumber={myLockedNumber}
                 opponentLocked={opponentLocked}
                 chatMessages={chatMessages}
+                botTypingState={botTypingState}
                 onSendChat={handleSendChat}
                 onApplyWebcamEffectTrack={handleApplyWebcamEffectTrack}
                 onApplyVoiceEffectTrack={handleApplyVoiceEffectTrack}

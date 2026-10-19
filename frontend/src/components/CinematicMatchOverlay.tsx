@@ -35,25 +35,27 @@ export const CinematicMatchOverlay: React.FC<CinematicMatchOverlayProps> = ({
     if (!revealResult || !revealResult.delivery_id) return;
     if (lastAnimatedIdRef.current === revealResult.delivery_id) return;
 
-    lastAnimatedIdRef.current = revealResult.delivery_id;
+    const prefersReducedMotion =
+      typeof window !== "undefined"
+        ? localStorage.getItem("sixfingers_reduced_motion") === "true"
+        : false;
 
     if (revealResult.is_wicket) {
       setActiveCelebration("wicket");
-      soundEngine.playWicket();
     } else if (revealResult.runs_scored === 6) {
       setActiveCelebration("six");
-      soundEngine.playSixFanfare();
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ["#FFD900", "#F000A8", "#9BE52E", "#6500C8"],
-        });
-      } catch (_) {}
+      if (!prefersReducedMotion) {
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ["#FFD900", "#F000A8", "#9BE52E", "#6500C8"],
+          });
+        } catch (_) {}
+      }
     } else if (revealResult.runs_scored === 4) {
       setActiveCelebration("four");
-      soundEngine.playFourFanfare();
     } else if (revealResult.runs_scored === 0) {
       setActiveCelebration("dot");
     }

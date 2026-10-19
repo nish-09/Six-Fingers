@@ -521,10 +521,13 @@ async def websocket_endpoint(
                             room.state.player_2_user_id, PresenceState.ONLINE, "Online · Available to play", None
                         ))
                 elif both_ready:
-                    HandCricketEngine.start_new_delivery(room.state)
-                    await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
                     if room.bot_session:
-                        room.bot_session.on_phase_change(MatchPhase.DECISION)
+                        if room.state.phase == MatchPhase.DECISION:
+                            room.bot_session.on_phase_change(MatchPhase.DECISION)
+                        elif room.state.phase == MatchPhase.OVER_BREAK:
+                            room.bot_session.on_phase_change(MatchPhase.OVER_BREAK)
+                        elif room.state.phase == MatchPhase.INNINGS_BREAK:
+                            room.bot_session.on_phase_change(MatchPhase.INNINGS_BREAK)
 
             # 13. Over Transition Ready (OVER_BREAK phase)
             elif msg_type == "READY_OVER_TRANSITION":
@@ -532,12 +535,13 @@ async def websocket_endpoint(
                 await room_manager.broadcast_state_to_all(room, "STATE_UPDATE", {
                     "over_ready": ready
                 })
+                if ready and room.bot_session:
+                    room.bot_session.on_phase_change(MatchPhase.DECISION)
 
             # 14. Start Innings 2 (from Innings Break)
             elif msg_type == "START_INNINGS_2":
                 if room.state.phase == MatchPhase.INNINGS_BREAK and (user_conn.is_host or user_conn.is_captain):
                     HandCricketEngine.transition_to_innings_2(room.state)
-                    HandCricketEngine.start_new_delivery(room.state)
                     await room_manager.broadcast_state_to_all(room, "STATE_UPDATE")
                     if room.bot_session:
                         room.bot_session.on_phase_change(MatchPhase.DECISION)

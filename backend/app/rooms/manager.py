@@ -690,14 +690,7 @@ class RoomManager:
 
                 # Notify active bot session if this is a bot match
                 if room.bot_session:
-                    if state.is_match_over:
-                        asyncio.create_task(room.bot_session.cleanup())
-                    elif state.phase == MatchPhase.INNINGS_BREAK:
-                        room.bot_session.on_phase_change(MatchPhase.INNINGS_BREAK)
-                    elif state.phase == MatchPhase.OVER_BREAK:
-                        room.bot_session.on_phase_change(MatchPhase.OVER_BREAK)
-                    else:
-                        room.bot_session.on_phase_change(MatchPhase.DISCUSSION)
+                    room.bot_session.on_delivery_resolved(delivery_res)
 
     async def handle_chat_message(
         self,
